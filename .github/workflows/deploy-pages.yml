@@ -1,0 +1,49 @@
+name: Deploy to GitHub Pages
+
+# Publishes the static site (index.html) so it can be viewed remotely at
+#   https://<owner>.github.io/<repo>/
+# Runs on pushes to the working branch and on the default branch, and can be
+# triggered manually from the Actions tab.
+
+on:
+  # Manual trigger from the Actions tab, plus auto-deploy when the site
+  # lands on the default branch. (GitHub Pages requires the repo to be
+  # public on free plans, or a paid plan for private Pages.)
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; let an in-progress run finish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Pages (auto-enable if needed)
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload site artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "."
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
