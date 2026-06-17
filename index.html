@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Road to Boston — Who plays the World Cup 2026 Round of 32 at Gillette Stadium?</title>
+<meta name="description" content="Interactive Monte Carlo simulation ranking which national teams are most likely to play in the FIFA World Cup 2026 Round of 32 match in Boston (Match 74, Gillette Stadium)." />
+<style>
+  :root{
+    --bg:#0a0e1a; --bg2:#0f1628; --card:#141d33; --card2:#1a2540;
+    --line:#243150; --txt:#eaf0ff; --mut:#93a2c8; --mut2:#6b7aa3;
+    --acc:#3ad0c2;          /* Boston / teal */
+    --acc2:#ffd24a;         /* gold */
+    --win:#3ad0c2;          /* group-E-winner route */
+    --third:#7c5cff;        /* wildcard 3rd-place route */
+    --red:#ff5d6c;
+    --radius:16px;
+    --shadow:0 10px 40px rgba(0,0,0,.45);
+    --font:'Segoe UI',system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:radial-gradient(1200px 700px at 20% -10%, #15203a 0%, var(--bg) 55%) fixed;
+    color:var(--txt); font-family:var(--font); line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--acc)}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 18px 80px}
+
+  /* HERO */
+  header.hero{padding:46px 18px 26px;text-align:center;position:relative;overflow:hidden}
+  .badge{display:inline-block;font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;
+    color:#04221f;background:linear-gradient(90deg,var(--acc),#8ff0e6);font-weight:800;
+    padding:6px 14px;border-radius:999px;margin-bottom:18px}
+  h1{font-size:clamp(34px,7vw,62px);margin:.1em 0 .15em;line-height:1.02;font-weight:900;letter-spacing:-.02em}
+  h1 .b{background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--mut);font-size:clamp(14px,2.4vw,18px);margin:0 0 22px}
+  .matchup{display:flex;gap:10px;align-items:stretch;justify-content:center;flex-wrap:wrap;max-width:760px;margin:0 auto}
+  .slot{flex:1 1 280px;background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:16px 18px;text-align:left;display:flex;gap:13px;align-items:center;min-height:78px}
+  .slot .ic{font-size:26px;line-height:1}
+  .slot .lab{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut2)}
+  .slot .nm{font-weight:800;font-size:17px}
+  .slot.win{box-shadow:inset 0 0 0 1px rgba(58,208,194,.35)}
+  .slot.third{box-shadow:inset 0 0 0 1px rgba(124,92,255,.35)}
+  .vs{display:flex;align-items:center;justify-content:center;font-weight:900;color:var(--mut2);font-size:15px;padding:0 4px}
+
+  .note{max-width:760px;margin:20px auto 0;color:var(--mut);font-size:13.5px;
+    background:rgba(255,210,74,.06);border:1px solid rgba(255,210,74,.22);border-radius:12px;padding:12px 16px}
+  .note b{color:var(--acc2)}
+
+  /* CONTROLS */
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .controls{margin:26px 0 8px;padding:18px 20px;display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+  .controls .grow{flex:1 1 260px}
+  .controls label{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut2);display:block;margin-bottom:6px}
+  .controls input[type=range]{width:100%;accent-color:var(--acc)}
+  .runbtn{background:linear-gradient(90deg,var(--acc),#2bb6a9);color:#042421;border:0;font-weight:800;
+    font-size:15.5px;padding:14px 26px;border-radius:12px;cursor:pointer;letter-spacing:.02em;
+    box-shadow:0 6px 20px rgba(58,208,194,.3);transition:transform .08s ease,filter .15s}
+  .runbtn:hover{filter:brightness(1.06)}
+  .runbtn:active{transform:translateY(1px)}
+  .runbtn[disabled]{opacity:.55;cursor:default;filter:grayscale(.3)}
+  .ghostbtn{background:transparent;border:1px solid var(--line);color:var(--mut);padding:11px 16px;border-radius:10px;cursor:pointer;font-size:13.5px;font-weight:600}
+  .ghostbtn:hover{border-color:var(--acc);color:var(--acc)}
+  .simcount{font-variant-numeric:tabular-nums;color:var(--txt);font-weight:800}
+  .progwrap{height:6px;background:#0c1426;border-radius:99px;overflow:hidden;margin-top:14px}
+  .progbar{height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .12s linear}
+  .status{font-size:12.5px;color:var(--mut2);margin-top:8px;min-height:16px}
+
+  h2.sec{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut2);margin:38px 4px 14px;font-weight:800}
+
+  /* SPOTLIGHT */
+  .spot{display:flex;gap:22px;align-items:center;padding:22px 24px;flex-wrap:wrap}
+  .spot .flag{font-size:62px;line-height:1;filter:drop-shadow(0 4px 10px rgba(0,0,0,.4))}
+  .spot .info{flex:1 1 220px}
+  .spot .info .k{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut2)}
+  .spot .info .team{font-size:30px;font-weight:900;letter-spacing:-.01em}
+  .spot .info .way{color:var(--mut);font-size:14px}
+  .spot .big{font-size:clamp(40px,9vw,64px);font-weight:900;line-height:1;
+    background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .spot .big small{display:block;font-size:12px;letter-spacing:.14em;color:var(--mut2);font-weight:700;text-align:right}
+
+  /* LEADERBOARD */
+  .board{padding:10px 14px 18px}
+  .row{display:grid;grid-template-columns:30px 30px 1fr;gap:12px;align-items:center;padding:9px 8px;border-radius:10px}
+  .row:hover{background:var(--card2)}
+  .row .rank{color:var(--mut2);font-weight:800;text-align:right;font-variant-numeric:tabular-nums;font-size:14px}
+  .row .fl{font-size:22px;line-height:1;text-align:center}
+  .row .main{min-width:0}
+  .row .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .row .nm{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .nm .grp{color:var(--mut2);font-weight:600;font-size:12px;margin-left:6px}
+  .row .pct{font-weight:900;font-variant-numeric:tabular-nums;font-size:15px}
+  .bar{height:11px;background:#0c1426;border-radius:99px;margin-top:6px;overflow:hidden;display:flex}
+  .bar .seg{height:100%;transition:width .5s cubic-bezier(.2,.7,.2,1)}
+  .bar .seg.win{background:linear-gradient(90deg,#3ad0c2,#56e0d2)}
+  .bar .seg.third{background:linear-gradient(90deg,#7c5cff,#a08bff)}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;padding:6px 12px 2px;color:var(--mut);font-size:13px}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:7px;vertical-align:-1px}
+  .legend .win i{background:var(--win)} .legend .third i{background:var(--third)}
+
+  /* TWO COLUMN PANELS */
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:760px){.cols{grid-template-columns:1fr}}
+  .pcard{padding:18px 20px}
+  .pcard h3{margin:0 0 4px;font-size:18px;font-weight:800}
+  .pcard .desc{color:var(--mut);font-size:13px;margin:0 0 14px}
+  .erow{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--line)}
+  .erow:first-of-type{border-top:0}
+  .erow .fl{font-size:20px}
+  .erow .nm{font-weight:600;font-size:14px}
+  .erow .rt{display:flex;align-items:center;gap:8px}
+  .erow input{width:64px;background:#0c1426;border:1px solid var(--line);color:var(--txt);
+    border-radius:8px;padding:6px 8px;font-size:13px;text-align:center;font-variant-numeric:tabular-nums}
+  .erow input:focus{outline:none;border-color:var(--acc)}
+  .erow .ep{font-weight:800;color:var(--acc);font-variant-numeric:tabular-nums;min-width:48px;text-align:right;font-size:14px}
+  .grpshare{display:flex;flex-direction:column;gap:9px;margin-top:4px}
+  .gs{display:grid;grid-template-columns:64px 1fr 46px;gap:10px;align-items:center;font-size:13px}
+  .gs .gbar{height:10px;background:#0c1426;border-radius:99px;overflow:hidden}
+  .gs .gbar i{display:block;height:100%;background:linear-gradient(90deg,#7c5cff,#a08bff);transition:width .5s}
+  .gs .gp{text-align:right;font-weight:800;color:#a08bff;font-variant-numeric:tabular-nums}
+  .gs .gl{color:var(--mut)}
+
+  details.box{margin-top:18px;border:1px solid var(--line);border-radius:var(--radius);background:var(--card);overflow:hidden}
+  details.box>summary{cursor:pointer;padding:16px 20px;font-weight:800;font-size:15px;list-style:none;display:flex;justify-content:space-between;align-items:center}
+  details.box>summary::-webkit-details-marker{display:none}
+  details.box>summary::after{content:"+";color:var(--mut2);font-size:20px}
+  details.box[open]>summary::after{content:"–"}
+  details.box .body{padding:4px 20px 20px;color:var(--mut);font-size:14px}
+  details.box .body h4{color:var(--txt);margin:16px 0 6px;font-size:14.5px}
+  details.box .body ul{margin:6px 0;padding-left:20px}
+  details.box .body li{margin:4px 0}
+  details.box code{background:#0c1426;border:1px solid var(--line);padding:1px 6px;border-radius:6px;font-size:12.5px;color:var(--acc)}
+
+  .ratings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px 22px;margin-top:8px}
+  .rg{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line)}
+  .rg .fl{font-size:17px;width:22px;text-align:center}
+  .rg .nm{flex:1;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rg .gl{color:var(--mut2);font-size:11px}
+  .rg input{width:58px;background:#0c1426;border:1px solid var(--line);color:var(--txt);border-radius:7px;padding:4px 6px;font-size:12.5px;text-align:center}
+  .rg input:focus{outline:none;border-color:var(--acc)}
+
+  footer{margin-top:40px;color:var(--mut2);font-size:12.5px;text-align:center;line-height:1.7}
+  footer a{color:var(--mut)}
+  .pill{display:inline-block;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:3px 10px;margin:3px;font-size:12px;color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="badge">FIFA World Cup 2026 · Round of 32 · Match 74</div>
+    <h1>Road to <span class="b">Boston</span></h1>
+    <p class="sub">Gillette Stadium, Foxborough MA · Mon June 29, 2026 · 4:30 PM ET<br>
+      Which country is most likely to play here? Ranked by probability.</p>
+    <div class="matchup">
+      <div class="slot win"><span class="ic">🟢</span><span><span class="lab">Home slot — locked path</span><span class="nm">Winner of Group E</span></span></div>
+      <div class="vs">VS</div>
+      <div class="slot third"><span class="ic">🟣</span><span><span class="lab">Wildcard slot</span><span class="nm">Best 3rd place · Group A/B/C/D/F</span></span></div>
+    </div>
+    <div class="note">
+      Boston's Round-of-32 game has <b>two tickets</b>. One always goes to whoever <b>wins Group E</b>
+      (Germany, Ecuador, Ivory Coast or Curaçao). The other goes to one of the <b>best third-placed teams</b>,
+      which the official bracket draws from <b>Groups A, B, C, D or F</b>. That's why Group E sides sit on top of the ranking.
+    </div>
+  </header>
+
+  <div class="panel controls">
+    <div class="grow">
+      <label>Simulations: <span class="simcount" id="simLabel">20,000</span></label>
+      <input type="range" id="simRange" min="2000" max="60000" step="2000" value="20000">
+    </div>
+    <button class="runbtn" id="runBtn">▶ Run simulation</button>
+    <button class="ghostbtn" id="resetBtn">Reset ratings</button>
+    <div style="flex-basis:100%">
+      <div class="progwrap"><div class="progbar" id="prog"></div></div>
+      <div class="status" id="status">Ready. Click “Run simulation”.</div>
+    </div>
+  </div>
+
+  <h2 class="sec">Most likely to play in Boston</h2>
+  <div class="panel spot" id="spot">
+    <div class="flag" id="spotFlag">🏟️</div>
+    <div class="info">
+      <div class="k">Front-runner</div>
+      <div class="team" id="spotTeam">Run the simulation</div>
+      <div class="way" id="spotWay">10,000s of tournaments simulated from current team strength</div>
+    </div>
+    <div class="big" id="spotPct">—<small>chance to appear</small></div>
+  </div>
+
+  <div class="legend">
+    <span class="win"><i></i>Reaches Boston by <b>winning Group E</b></span>
+    <span class="third"><i></i>Reaches Boston as a <b>wildcard 3rd-place team</b></span>
+  </div>
+  <div class="panel board" id="board"></div>
+
+  <div class="cols" style="margin-top:18px">
+    <div class="panel pcard">
+      <h3>🟢 The Group E race</h3>
+      <p class="desc">Only the <b>winner</b> of Group E comes to Boston (the runner-up goes to Match 78 elsewhere). Edit a rating and re-run.</p>
+      <div id="groupE"></div>
+    </div>
+    <div class="panel pcard">
+      <h3>🟣 Where the wildcard comes from</h3>
+      <p class="desc">Boston's 3rd-place ticket is routed from one of these five groups by the official combination table. Share of simulations:</p>
+      <div class="grpshare" id="grpShare"></div>
+    </div>
+  </div>
+
+  <details class="box">
+    <summary>How this works — methodology &amp; assumptions</summary>
+    <div class="body">
+      <p>This is a <b>Monte Carlo simulation</b>. Each "run" plays out the entire 48-team group stage thousands of times, then resolves the Round-of-32 bracket, and counts how often each country ends up in <b>Match 74 (Boston)</b>.</p>
+      <h4>The Boston match (real bracket)</h4>
+      <ul>
+        <li>Match 74 at Gillette Stadium = <code>Winner Group E</code> vs <code>Best 3rd place from A/B/C/D/F</code>.</li>
+        <li>32 teams reach the Round of 32: 12 group winners + 12 runners-up + the <b>8 best third-placed</b> teams.</li>
+        <li>Third-placed teams are slotted to winners by FIFA's official combination table. Boston's winner-of-E slot can only meet a third-placed side from Groups A, B, C, D or F.</li>
+      </ul>
+      <h4>Match model</h4>
+      <ul>
+        <li>Each team has a strength rating (default = approximate <b>FIFA World Ranking points, June 2026</b>). All ratings are editable above.</li>
+        <li>For each game, the rating gap sets an expected goal supremacy; each side's goals are drawn from a Poisson distribution, so scorelines (and goal difference) are realistic.</li>
+        <li>Group ranking uses points → goal difference → goals scored (head-to-head/fair-play tiebreakers simplified). The 8 best thirds are ranked the same way.</li>
+        <li>Qualifying thirds are matched to winner slots by a valid assignment respecting the official eligibility sets; when several assignments are valid the choice is randomised, so no single group is artificially favoured.</li>
+      </ul>
+      <h4>Honest caveats</h4>
+      <ul>
+        <li>It's a model for fun and insight, <b>not a betting tool</b>. Ratings are approximate and the exact 495-row FIFA third-place table is approximated by a valid randomised matching.</li>
+        <li>The default ratings are pre-tournament strength. As real results come in, nudge the ratings (or drop a team's rating to ~1200 to mimic an early exit) and re-run to see the picture shift.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="box">
+    <summary>Edit all 48 team ratings (advanced)</summary>
+    <div class="body">
+      <p>Tweak any rating and click <b>Run simulation</b> again. Higher = stronger.</p>
+      <div class="ratings-grid" id="allRatings"></div>
+    </div>
+  </details>
+
+  <footer>
+    <div>
+      <span class="pill">Group E: Germany · Ecuador · Ivory Coast · Curaçao</span>
+      <span class="pill">Match 74 · 29 Jun 2026 · 4:30pm ET</span>
+      <span class="pill">Boston / Gillette Stadium</span>
+    </div>
+    <p style="margin-top:14px">Built as an interactive World Cup 2026 explainer. Bracket &amp; schedule per FIFA's official Round-of-32 format;
+    strengths based on FIFA World Ranking (June 2026). Simulation runs entirely in your browser — nothing is sent anywhere.</p>
+  </footer>
+
+</div>
+
+<script>
+"use strict";
+/* ----------------------------- DATA ----------------------------- */
+// Approximate FIFA World Ranking points, June 2026 (editable at runtime).
+const DEFAULT_RATINGS = {
+  "Mexico":1687,"South Korea":1585,"Czechia":1495,"South Africa":1438,
+  "Switzerland":1650,"Canada":1568,"Bosnia & Herzegovina":1465,"Qatar":1440,
+  "Brazil":1760,"Morocco":1755,"Scotland":1503,"Haiti":1320,
+  "United States":1671,"Türkiye":1605,"Australia":1579,"Paraguay":1505,
+  "Germany":1730,"Ecuador":1598,"Ivory Coast":1540,"Curaçao":1300,
+  "Netherlands":1753,"Japan":1661,"Sweden":1509,"Tunisia":1476,
+  "Belgium":1742,"Iran":1632,"Egypt":1521,"New Zealand":1300,
+  "Spain":1875,"Uruguay":1673,"Saudi Arabia":1430,"Cape Verde":1400,
+  "France":1865,"Senegal":1684,"Norway":1557,"Iraq":1380,
+  "Argentina":1886,"Austria":1600,"Algeria":1535,"Jordan":1385,
+  "Portugal":1778,"Colombia":1698,"DR Congo":1485,"Uzbekistan":1455,
+  "England":1820,"Croatia":1714,"Panama":1515,"Ghana":1410
+};
+const GROUPS = {
+  A:["Mexico","South Korea","Czechia","South Africa"],
+  B:["Switzerland","Canada","Bosnia & Herzegovina","Qatar"],
+  C:["Brazil","Morocco","Scotland","Haiti"],
+  D:["United States","Türkiye","Australia","Paraguay"],
+  E:["Germany","Ecuador","Ivory Coast","Curaçao"],
+  F:["Netherlands","Japan","Sweden","Tunisia"],
+  G:["Belgium","Iran","Egypt","New Zealand"],
+  H:["Spain","Uruguay","Saudi Arabia","Cape Verde"],
+  I:["France","Senegal","Norway","Iraq"],
+  J:["Argentina","Austria","Algeria","Jordan"],
+  K:["Portugal","Colombia","DR Congo","Uzbekistan"],
+  L:["England","Croatia","Panama","Ghana"]
+};
+const FLAGS = {
+  "Mexico":"🇲🇽","South Korea":"🇰🇷","Czechia":"🇨🇿","South Africa":"🇿🇦",
+  "Switzerland":"🇨🇭","Canada":"🇨🇦","Bosnia & Herzegovina":"🇧🇦","Qatar":"🇶🇦",
+  "Brazil":"🇧🇷","Morocco":"🇲🇦","Scotland":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","Haiti":"🇭🇹",
+  "United States":"🇺🇸","Türkiye":"🇹🇷","Australia":"🇦🇺","Paraguay":"🇵🇾",
+  "Germany":"🇩🇪","Ecuador":"🇪🇨","Ivory Coast":"🇨🇮","Curaçao":"🇨🇼",
+  "Netherlands":"🇳🇱","Japan":"🇯🇵","Sweden":"🇸🇪","Tunisia":"🇹🇳",
+  "Belgium":"🇧🇪","Iran":"🇮🇷","Egypt":"🇪🇬","New Zealand":"🇳🇿",
+  "Spain":"🇪🇸","Uruguay":"🇺🇾","Saudi Arabia":"🇸🇦","Cape Verde":"🇨🇻",
+  "France":"🇫🇷","Senegal":"🇸🇳","Norway":"🇳🇴","Iraq":"🇮🇶",
+  "Argentina":"🇦🇷","Austria":"🇦🇹","Algeria":"🇩🇿","Jordan":"🇯🇴",
+  "Portugal":"🇵🇹","Colombia":"🇨🇴","DR Congo":"🇨🇩","Uzbekistan":"🇺🇿",
+  "England":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","Croatia":"🇭🇷","Panama":"🇵🇦","Ghana":"🇬🇭"
+};
+// Round-of-32 winner-vs-third slots and the groups each can draw a third from.
+// 1E is Boston (Match 74).
+const SLOT_ELIG = {
+  '1A':['C','E','F','H','I'], '1B':['E','F','G','I','J'],
+  '1D':['B','E','F','I','J'], '1E':['A','B','C','D','F'],
+  '1G':['A','E','H','I','J'], '1I':['C','D','F','G','H'],
+  '1K':['D','E','I','J','L'], '1L':['E','H','I','J','K']
+};
+const SLOTS = Object.keys(SLOT_ELIG);
+const GROUP_OF = {};
+for (const g in GROUPS) GROUPS[g].forEach(t=>GROUP_OF[t]=g);
+
+let RATINGS = Object.assign({}, DEFAULT_RATINGS);
+
+/* --------------------------- SIM ENGINE ------------------------- */
+const DIV = 210, TOTAL = 2.6;
+function poisson(l){ const L=Math.exp(-l); let k=0,p=1; do{k++;p*=Math.random();}while(p>L); return k-1; }
+function simMatch(ra,rb){
+  const s=(ra-rb)/DIV; let la=(TOTAL+s)/2, lb=(TOTAL-s)/2;
+  if(la<0.18)la=0.18; if(lb<0.18)lb=0.18;
+  return [poisson(la),poisson(lb)];
+}
+function simGroup(teams){
+  const st={};
+  for(const t of teams) st[t]={team:t,pts:0,gf:0,ga:0,gd:0,h2h:{}};
+  for(let i=0;i<4;i++) for(let j=i+1;j<4;j++){
+    const a=teams[i],b=teams[j], r=simMatch(RATINGS[a],RATINGS[b]), ga=r[0],gb=r[1];
+    st[a].gf+=ga;st[a].ga+=gb;st[b].gf+=gb;st[b].ga+=ga;
+    if(ga>gb){st[a].pts+=3;st[a].h2h[b]=3;st[b].h2h[a]=0;}
+    else if(gb>ga){st[b].pts+=3;st[b].h2h[a]=3;st[a].h2h[b]=0;}
+    else{st[a].pts++;st[b].pts++;st[a].h2h[b]=1;st[b].h2h[a]=1;}
+  }
+  for(const t of teams) st[t].gd=st[t].gf-st[t].ga;
+  return teams.map(t=>st[t]).sort((x,y)=>{
+    if(y.pts!==x.pts)return y.pts-x.pts;
+    if(y.gd!==x.gd)return y.gd-x.gd;
+    if(y.gf!==x.gf)return y.gf-x.gf;
+    const hx=x.h2h[y.team],hy=y.h2h[x.team];
+    if(hx!==undefined&&hx!==hy)return hy-hx;
+    return Math.random()-0.5;
+  });
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;const t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function assignThirds(qualGroups){
+  const result={}, used={};
+  function bt(){
+    let chosen=null, opts=null;
+    for(const slot of shuffle(SLOTS.slice())){
+      if(result[slot]!==undefined)continue;
+      const o=SLOT_ELIG[slot].filter(g=>qualGroups.indexOf(g)>=0&&!used[g]);
+      if(opts===null||o.length<opts.length){chosen=slot;opts=o;}
+    }
+    if(chosen===null)return true;
+    if(opts.length===0)return false;
+    for(const g of shuffle(opts)){
+      result[chosen]=g; used[g]=1;
+      if(bt())return true;
+      used[g]=0; delete result[chosen];
+    }
+    return false;
+  }
+  return bt()?result:null;
+}
+
+/* ----------------------- RUN (chunked) -------------------------- */
+let acc, runningToken=0;
+function freshAcc(){
+  const z={}; for(const t in RATINGS) z[t]=0;
+  return {n:0, boston:Object.assign({},z), win:Object.assign({},z),
+          third:Object.assign({},z), winE:Object.assign({},z),
+          grp:{A:0,B:0,C:0,D:0,F:0}};
+}
+function simOnce(a){
+  const standings={}, thirds=[];
+  for(const g in GROUPS){
+    const r=simGroup(GROUPS[g]); standings[g]=r;
+    thirds.push({group:g, team:r[2].team, pts:r[2].pts, gd:r[2].gd, gf:r[2].gf});
+  }
+  thirds.sort((x,y)=> y.pts-x.pts || y.gd-x.gd || y.gf-x.gf || Math.random()-0.5);
+  const qual=thirds.slice(0,8), qg=qual.map(t=>t.group);
+  const we=standings['E'][0].team;
+  a.win[we]++; a.winE[we]++; a.boston[we]++;
+  const asg=assignThirds(qg);
+  if(asg){
+    const bg=asg['1E'], bteam=standings[bg][2].team;
+    a.third[bteam]++; a.boston[bteam]++; a.grp[bg]++;
+  }
+  a.n++;
+}
+
+function run(){
+  const token=++runningToken;
+  const total=+document.getElementById('simRange').value;
+  acc=freshAcc();
+  const btn=document.getElementById('runBtn'); btn.disabled=true;
+  const t0=performance.now();
+  const CHUNK=1500;
+  (function step(){
+    if(token!==runningToken) return;          // superseded by a newer run
+    const end=Math.min(acc.n+CHUNK,total);
+    while(acc.n<end) simOnce(acc);
+    const frac=acc.n/total;
+    document.getElementById('prog').style.width=(frac*100).toFixed(1)+'%';
+    document.getElementById('status').textContent='Simulating… '+acc.n.toLocaleString()+' / '+total.toLocaleString();
+    if(acc.n<total){ setTimeout(step,0); }
+    else{
+      const ms=(performance.now()-t0).toFixed(0);
+      document.getElementById('status').textContent='Done — '+total.toLocaleString()+' tournaments simulated in '+ms+' ms. Edit ratings and run again.';
+      btn.disabled=false;
+      render();
+    }
+  })();
+}
+
+/* ----------------------------- RENDER --------------------------- */
+function pct(c){ return 100*c/acc.n; }
+function render(){
+  const rows=Object.keys(RATINGS).map(t=>({
+    team:t, p:pct(acc.boston[t]), w:pct(acc.win[t]), d:pct(acc.third[t])
+  })).filter(r=>r.p>0.04).sort((a,b)=>b.p-a.p);
+  const max=rows.length?rows[0].p:1;
+
+  // Spotlight
+  if(rows.length){
+    const top=rows[0];
+    document.getElementById('spotFlag').textContent=FLAGS[top.team]||'🏟️';
+    document.getElementById('spotTeam').textContent=top.team;
+    document.getElementById('spotPct').innerHTML=top.p.toFixed(1)+'%<small>chance to appear</small>';
+    const way = top.w>top.d ? ('mainly by winning Group E ('+top.w.toFixed(1)+'%)')
+                            : ('as a wildcard 3rd-place team ('+top.d.toFixed(1)+'%)');
+    document.getElementById('spotWay').textContent='Most likely route: '+way;
+  }
+
+  // Leaderboard
+  const board=document.getElementById('board');
+  board.innerHTML='';
+  rows.forEach((r,i)=>{
+    const wW=(r.w/max)*100, wD=(r.d/max)*100;
+    const div=document.createElement('div'); div.className='row';
+    div.innerHTML=
+      '<div class="rank">'+(i+1)+'</div>'+
+      '<div class="fl">'+(FLAGS[r.team]||'')+'</div>'+
+      '<div class="main"><div class="top"><div class="nm">'+r.team+
+        '<span class="grp">Grp '+GROUP_OF[r.team]+'</span></div>'+
+        '<div class="pct">'+r.p.toFixed(1)+'%</div></div>'+
+        '<div class="bar"><div class="seg win" style="width:'+wW.toFixed(2)+'%"></div>'+
+        '<div class="seg third" style="width:'+wD.toFixed(2)+'%"></div></div></div>';
+    div.title=r.team+': '+r.p.toFixed(1)+'% — win Group E '+r.w.toFixed(1)+'%, 3rd-place route '+r.d.toFixed(1)+'%';
+    board.appendChild(div);
+  });
+
+  // Group E race
+  const ge=document.getElementById('groupE'); ge.innerHTML='';
+  GROUPS.E.map(t=>({t,p:pct(acc.winE[t])})).sort((a,b)=>b.p-a.p).forEach(o=>{
+    const row=document.createElement('div'); row.className='erow';
+    row.innerHTML='<div class="fl">'+FLAGS[o.t]+'</div>'+
+      '<div><div class="nm">'+o.t+'</div></div>'+
+      '<div class="rt"><input type="number" data-team="'+o.t+'" value="'+RATINGS[o.t]+'">'+
+      '<span class="ep">'+o.p.toFixed(1)+'%</span></div>';
+    ge.appendChild(row);
+  });
+  bindRatingInputs(ge);
+
+  // Group share
+  const gsWrap=document.getElementById('grpShare'); gsWrap.innerHTML='';
+  const totThird = ['A','B','C','D','F'].reduce((s,g)=>s+acc.grp[g],0)||1;
+  ['A','B','C','D','F'].map(g=>({g,p:100*acc.grp[g]/totThird}))
+    .sort((a,b)=>b.p-a.p).forEach(o=>{
+    const names=GROUPS[o.g].slice(0,2).join(', ')+'…';
+    const el=document.createElement('div'); el.className='gs';
+    el.innerHTML='<div class="gl">Group '+o.g+'</div>'+
+      '<div class="gbar"><i style="width:'+o.p.toFixed(1)+'%"></i></div>'+
+      '<div class="gp">'+o.p.toFixed(0)+'%</div>';
+    el.title='Group '+o.g+' ('+GROUPS[o.g].join(', ')+') supplies Boston’s 3rd-place team in '+o.p.toFixed(1)+'% of runs';
+    gsWrap.appendChild(el);
+  });
+}
+
+/* --------------------------- RATINGS UI ------------------------- */
+function bindRatingInputs(scope){
+  scope.querySelectorAll('input[data-team]').forEach(inp=>{
+    inp.addEventListener('change',()=>{
+      const v=Math.max(800,Math.min(2200,+inp.value||DEFAULT_RATINGS[inp.dataset.team]));
+      RATINGS[inp.dataset.team]=v; inp.value=v; syncRatingInputs();
+    });
+  });
+}
+function syncRatingInputs(){
+  document.querySelectorAll('input[data-team]').forEach(i=>{ i.value=RATINGS[i.dataset.team]; });
+}
+function buildAllRatings(){
+  const wrap=document.getElementById('allRatings'); wrap.innerHTML='';
+  Object.keys(GROUPS).forEach(g=>GROUPS[g].forEach(t=>{
+    const d=document.createElement('div'); d.className='rg';
+    d.innerHTML='<span class="fl">'+FLAGS[t]+'</span><span class="nm">'+t+
+      ' <span class="gl">'+g+'</span></span>'+
+      '<input type="number" data-team="'+t+'" value="'+RATINGS[t]+'">';
+    wrap.appendChild(d);
+  }));
+  bindRatingInputs(wrap);
+}
+
+/* ----------------------------- INIT ----------------------------- */
+document.getElementById('simRange').addEventListener('input',e=>{
+  document.getElementById('simLabel').textContent=(+e.target.value).toLocaleString();
+});
+document.getElementById('runBtn').addEventListener('click',run);
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  RATINGS=Object.assign({},DEFAULT_RATINGS); syncRatingInputs();
+  document.getElementById('status').textContent='Ratings reset to FIFA-ranking defaults. Run again.';
+});
+buildAllRatings();
+run(); // auto-run once on load
+</script>
+</body>
+</html>
