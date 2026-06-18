@@ -175,6 +175,18 @@
   .pairrow .tm .vs2{color:var(--mut2);font-weight:800;font-size:11px;margin:0 3px}
   .pairrow .pp{font-weight:900;color:var(--acc2);font-variant-numeric:tabular-nums;font-size:14px}
 
+  /* RESULTS TOGGLE + GRID */
+  .chk{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--mut);font-weight:600;cursor:pointer}
+  .chk input{width:16px;height:16px;accent-color:var(--acc);cursor:pointer}
+  .resgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:6px 24px;margin-top:10px}
+  .resg{padding:7px 0;border-bottom:1px solid var(--line)}
+  .resg .gh{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);font-weight:800;margin-bottom:4px}
+  .resm{display:flex;align-items:center;gap:6px;font-size:13px;padding:2px 0;white-space:nowrap}
+  .resm .sc{font-weight:800;color:var(--acc2);font-variant-numeric:tabular-nums;margin:0 3px}
+  .resm .fl{font-size:15px}
+  .resm .tn{color:var(--mut);overflow:hidden;text-overflow:ellipsis}
+  .resm .tn.w{color:var(--txt);font-weight:700}
+
   footer{margin-top:40px;color:var(--mut2);font-size:12.5px;text-align:center;line-height:1.7}
   footer a{color:var(--mut)}
   .pill{display:inline-block;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:3px 10px;margin:3px;font-size:12px;color:var(--mut)}
@@ -187,7 +199,7 @@
     <div class="badge">FIFA World Cup 2026 · Round of 32 · Match 74</div>
     <h1>Road to <span class="b">Boston</span></h1>
     <p class="sub">Gillette Stadium, Foxborough MA · Mon June 29, 2026 · 4:30 PM ET<br>
-      Which country is most likely to play here? Ranked by probability.</p>
+      Which country is most likely to play here? Ranked by probability — <b>updated with live group-stage results</b>.</p>
     <div class="matchup">
       <div class="slot win"><span class="ic">🟢</span><span><span class="lab">Home slot — locked path</span><span class="nm">Winner of Group E</span></span></div>
       <div class="vs">VS</div>
@@ -207,11 +219,25 @@
     </div>
     <button class="runbtn" id="runBtn">▶ Run simulation</button>
     <button class="ghostbtn" id="resetBtn">Reset ratings</button>
+    <div style="flex-basis:100%;display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+      <label class="chk"><input type="checkbox" id="useResults" checked> Lock in real results <span id="resTag">(through MD1)</span></label>
+      <button class="ghostbtn" id="liveBtn">↻ Refresh from live data</button>
+    </div>
     <div style="flex-basis:100%">
       <div class="progwrap"><div class="progbar" id="prog"></div></div>
       <div class="status" id="status">Ready. Click “Run simulation”.</div>
     </div>
   </div>
+
+  <details class="box" id="resultsBox" open>
+    <summary>✅ Real results baked in — <span id="resultsSummary">Matchday 1 · 24 matches</span></summary>
+    <div class="body">
+      <p>These completed matches are <b>locked</b> in every simulation; only the remaining fixtures are simulated. Source:
+        <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a>.
+        Uncheck “Lock in real results” above to compare with the pre-tournament forecast.</p>
+      <div class="resgrid" id="resGrid"></div>
+    </div>
+  </details>
 
   <h2 class="sec">The most likely Boston matchup</h2>
   <div class="panel mcard" id="matchCard">
@@ -277,10 +303,16 @@
         <li>Group ranking uses points → goal difference → goals scored (head-to-head/fair-play tiebreakers simplified). The 8 best thirds are ranked the same way.</li>
         <li>Qualifying thirds are matched to winner slots by a valid assignment respecting the official eligibility sets; when several assignments are valid the choice is randomised, so no single group is artificially favoured.</li>
       </ul>
+      <h4>Real results (live)</h4>
+      <ul>
+        <li>Completed group-stage matches are <b>locked</b> to their actual scorelines; only the remaining fixtures are simulated. Results come from <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a> and are listed in the “Real results baked in” panel.</li>
+        <li>“↻ Refresh from live data” pulls the latest scores in your browser (matches dated on/before today). Untick “Lock in real results” to see the pre-tournament forecast instead.</li>
+        <li>Ratings stay at their pre-tournament value for the matches still to be played — a locked 7–1 already reshapes goal difference and the third-place race without us second-guessing each team's form.</li>
+      </ul>
       <h4>Honest caveats</h4>
       <ul>
         <li>It's a model for fun and insight, <b>not a betting tool</b>. Ratings are approximate and the exact 495-row FIFA third-place table is approximated by a valid randomised matching.</li>
-        <li>The default ratings are pre-tournament strength. As real results come in, nudge the ratings (or drop a team's rating to ~1200 to mimic an early exit) and re-run to see the picture shift.</li>
+        <li>You can still nudge any rating (e.g. after watching a team play) and re-run to see the picture shift.</li>
       </ul>
     </div>
   </details>
@@ -351,6 +383,25 @@ const FLAGS = {
   "Portugal":"🇵🇹","Colombia":"🇨🇴","DR Congo":"🇨🇩","Uzbekistan":"🇺🇿",
   "England":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","Croatia":"🇭🇷","Panama":"🇵🇦","Ghana":"🇬🇭"
 };
+// Real group-stage results, fetched from openfootball/worldcup.json.
+// Matches already played (locked); the rest are simulated. [team1, team2, goals1, goals2]
+let RESULTS_DATE = "2026-06-17";   // results through Matchday 1
+const PLAYED = {
+  A: [["Mexico","South Africa",2,0], ["South Korea","Czechia",2,1]],
+  B: [["Canada","Bosnia & Herzegovina",1,1], ["Qatar","Switzerland",1,1]],
+  C: [["Brazil","Morocco",1,1], ["Haiti","Scotland",0,1]],
+  D: [["United States","Paraguay",4,1], ["Australia","Türkiye",2,0]],
+  E: [["Germany","Curaçao",7,1], ["Ivory Coast","Ecuador",1,0]],
+  F: [["Netherlands","Japan",2,2], ["Sweden","Tunisia",5,1]],
+  G: [["Belgium","Egypt",1,1], ["Iran","New Zealand",2,2]],
+  H: [["Spain","Cape Verde",0,0], ["Saudi Arabia","Uruguay",1,1]],
+  I: [["France","Senegal",3,1], ["Iraq","Norway",1,4]],
+  J: [["Argentina","Algeria",3,0], ["Austria","Jordan",3,1]],
+  K: [["Portugal","DR Congo",1,1], ["Uzbekistan","Colombia",1,3]],
+  L: [["England","Croatia",4,2], ["Ghana","Panama",1,0]]
+};
+const LIVE_URL = "https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json";
+
 // Round-of-32 winner-vs-third slots and the groups each can draw a third from.
 // 1E is Boston (Match 74).
 const SLOT_ELIG = {
@@ -373,11 +424,21 @@ function simMatch(ra,rb){
   if(la<0.18)la=0.18; if(lb<0.18)lb=0.18;
   return [poisson(la),poisson(lb)];
 }
-function simGroup(teams){
+function lockedScore(played,a,b){
+  if(!played) return null;
+  for(const m of played){
+    if(m[0]===a&&m[1]===b) return [m[2],m[3]];
+    if(m[0]===b&&m[1]===a) return [m[3],m[2]];
+  }
+  return null;
+}
+function simGroup(teams,played){
   const st={};
   for(const t of teams) st[t]={team:t,pts:0,gf:0,ga:0,gd:0,h2h:{}};
   for(let i=0;i<4;i++) for(let j=i+1;j<4;j++){
-    const a=teams[i],b=teams[j], r=simMatch(RATINGS[a],RATINGS[b]), ga=r[0],gb=r[1];
+    const a=teams[i],b=teams[j];
+    let r=lockedScore(played,a,b); if(!r) r=simMatch(RATINGS[a],RATINGS[b]);
+    const ga=r[0],gb=r[1];
     st[a].gf+=ga;st[a].ga+=gb;st[b].gf+=gb;st[b].ga+=ga;
     if(ga>gb){st[a].pts+=3;st[a].h2h[b]=3;st[b].h2h[a]=0;}
     else if(gb>ga){st[b].pts+=3;st[b].h2h[a]=3;st[a].h2h[b]=0;}
@@ -416,7 +477,7 @@ function assignThirds(qualGroups){
 }
 
 /* ----------------------- RUN (chunked) -------------------------- */
-let acc, runningToken=0;
+let acc, runningToken=0, lockResults=true;
 function freshAcc(){
   const z={}; for(const t in RATINGS) z[t]=0;
   return {n:0, winE:Object.assign({},z), third:Object.assign({},z),
@@ -425,7 +486,7 @@ function freshAcc(){
 function simOnce(a){
   const standings={}, thirds=[];
   for(const g in GROUPS){
-    const r=simGroup(GROUPS[g]); standings[g]=r;
+    const r=simGroup(GROUPS[g], lockResults?PLAYED[g]:null); standings[g]=r;
     thirds.push({group:g, team:r[2].team, pts:r[2].pts, gd:r[2].gd, gf:r[2].gf});
   }
   thirds.sort((x,y)=> y.pts-x.pts || y.gd-x.gd || y.gf-x.gf || Math.random()-0.5);
@@ -444,6 +505,7 @@ function simOnce(a){
 function run(){
   const token=++runningToken;
   const total=+document.getElementById('simRange').value;
+  lockResults=document.getElementById('useResults').checked;
   acc=freshAcc();
   const btn=document.getElementById('runBtn'); btn.disabled=true;
   const t0=performance.now();
@@ -458,7 +520,7 @@ function run(){
     if(acc.n<total){ setTimeout(step,0); }
     else{
       const ms=(performance.now()-t0).toFixed(0);
-      document.getElementById('status').textContent='Done — '+total.toLocaleString()+' tournaments simulated in '+ms+' ms. Edit ratings and run again.';
+      document.getElementById('status').textContent='Done — '+total.toLocaleString()+' sims in '+ms+' ms · '+(lockResults?('real results locked through '+RESULTS_DATE):'pre-tournament mode (results ignored)')+'.';
       btn.disabled=false;
       render();
     }
@@ -569,16 +631,69 @@ function buildAllRatings(){
   bindRatingInputs(wrap);
 }
 
+/* --------------------------- RESULTS UI ------------------------- */
+function renderResultsPanel(){
+  const grid=document.getElementById('resGrid'); if(!grid) return;
+  grid.innerHTML=''; let count=0;
+  Object.keys(GROUPS).sort().forEach(g=>{
+    const ms=PLAYED[g]||[]; if(!ms.length) return;
+    const blk=document.createElement('div'); blk.className='resg';
+    let h='<div class="gh">Group '+g+'</div>';
+    ms.forEach(m=>{ count++;
+      const aw=m[2]>m[3], bw=m[3]>m[2];
+      h+='<div class="resm"><span class="fl">'+(FLAGS[m[0]]||'')+'</span>'+
+         '<span class="tn'+(aw?' w':'')+'">'+m[0]+'</span>'+
+         '<span class="sc">'+m[2]+'–'+m[3]+'</span>'+
+         '<span class="tn'+(bw?' w':'')+'">'+m[1]+'</span>'+
+         '<span class="fl">'+(FLAGS[m[1]]||'')+'</span></div>';
+    });
+    blk.innerHTML=h; grid.appendChild(blk);
+  });
+  const s=document.getElementById('resultsSummary'); if(s) s.textContent='through '+RESULTS_DATE+' · '+count+' matches locked';
+  const tag=document.getElementById('resTag'); if(tag) tag.textContent='(through '+RESULTS_DATE+')';
+}
+async function refreshLive(){
+  const st=document.getElementById('status'), btn=document.getElementById('liveBtn');
+  btn.disabled=true; st.textContent='Fetching live results from openfootball…';
+  try{
+    const res=await fetch(LIVE_URL,{cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const MAP={'Czech Republic':'Czechia','Turkey':'Türkiye','USA':'United States'};
+    const norm=n=>MAP[n]||n, today=new Date().toISOString().slice(0,10);
+    const np={}; let latest='0000-00-00', total=0;
+    (data.matches||[]).forEach(m=>{
+      if(m.group&&m.group.indexOf('Group ')===0&&m.score&&m.score.ft&&m.date&&m.date<=today){
+        const a=norm(m.team1), b=norm(m.team2); if(!(a in RATINGS)||!(b in RATINGS)) return;
+        const g=m.group.slice(6).trim();
+        (np[g]=np[g]||[]).push([a,b,m.score.ft[0],m.score.ft[1]]); total++;
+        if(m.date>latest) latest=m.date;
+      }
+    });
+    if(total===0) throw new Error('no completed matches found for today');
+    for(const g in PLAYED) delete PLAYED[g]; Object.assign(PLAYED,np);
+    RESULTS_DATE=latest; renderResultsPanel();
+    document.getElementById('useResults').checked=true;
+    st.textContent='Live results loaded ('+total+' matches through '+latest+'). Re-running…';
+    run();
+  }catch(e){
+    st.textContent='Live refresh failed ('+e.message+'). Keeping built-in results through '+RESULTS_DATE+'.';
+  }finally{ btn.disabled=false; }
+}
+
 /* ----------------------------- INIT ----------------------------- */
 document.getElementById('simRange').addEventListener('input',e=>{
   document.getElementById('simLabel').textContent=(+e.target.value).toLocaleString();
 });
 document.getElementById('runBtn').addEventListener('click',run);
+document.getElementById('liveBtn').addEventListener('click',refreshLive);
+document.getElementById('useResults').addEventListener('change',run);
 document.getElementById('resetBtn').addEventListener('click',()=>{
   RATINGS=Object.assign({},DEFAULT_RATINGS); syncRatingInputs();
   document.getElementById('status').textContent='Ratings reset to FIFA-ranking defaults. Run again.';
 });
 buildAllRatings();
+renderResultsPanel();
 run(); // auto-run once on load
 </script>
 </body>

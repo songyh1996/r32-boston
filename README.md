@@ -23,11 +23,14 @@ The page is a single, self‑contained `index.html` (no build step, no dependenc
 
 ## ✨ What you can do
 
-- See a **live leaderboard** ranking every contender by its chance to appear in Boston,
-  split by route: **win Group E** (teal) vs **wildcard 3rd place** (purple).
-- Adjust the **number of simulations** (2k–60k) and re‑run.
-- **Edit any team's rating** (Group E race panel, or the full 48‑team editor) to reflect
-  results as the tournament unfolds, then re‑run to watch the ranking shift.
+- It's **one game = two seats**, shown as **A vs B**: a matchup card, then two
+  separate ranked races — **Seat A** (who wins Group E) and **Seat B** (the wildcard
+  3rd‑place team) — each summing to ~100%, plus the most likely **exact A‑vs‑B ties**.
+- **Real group‑stage results are baked in.** Completed matches are locked to their
+  actual scores (only remaining fixtures are simulated). Toggle them off to compare with
+  the pre‑tournament forecast, or hit **↻ Refresh from live data** to pull the latest.
+- Adjust the **number of simulations** (2k–60k), **edit any team's rating** (Seat A
+  inline or the full 48‑team editor), and re‑run to watch the picture shift.
 - See **which group** Boston's wildcard third‑placed team comes from most often.
 
 ## 🧮 Methodology
@@ -37,14 +40,18 @@ It is a forward Monte Carlo simulation, run entirely in your browser:
 1. **Match model.** Each team has a strength rating (default ≈ FIFA World Ranking points,
    June 2026). A match's rating gap sets an expected goal supremacy, and each side's goals
    are drawn from a **Poisson** distribution — so scorelines and goal difference are realistic.
-2. **Group stage.** All 12 groups are played out; teams are ranked by
+2. **Real results, then simulate the rest.** Completed group‑stage matches are **locked**
+   to their actual scorelines (fetched from
+   [openfootball/worldcup.json](https://github.com/openfootball/worldcup.json)); only the
+   not‑yet‑played fixtures are simulated.
+3. **Group stage.** All 12 groups are completed; teams are ranked by
    points → goal difference → goals scored (head‑to‑head/fair‑play tiebreakers are simplified).
-3. **Round of 32.** 32 teams advance: 12 winners + 12 runners‑up + the **8 best third‑placed**
+4. **Round of 32.** 32 teams advance: 12 winners + 12 runners‑up + the **8 best third‑placed**
    teams. Thirds are matched to winner slots respecting FIFA's official eligibility sets
    (Boston's *Winner Group E* slot can only meet a third from **A/B/C/D/F**). When more than
    one valid assignment exists the choice is randomised, so no group is artificially favoured.
-4. **Tally.** Over all runs, count how often each country is one of the two teams in
-   **Match 74**, and report the probability.
+5. **Tally.** Over all runs, track each **seat** separately — who fills Seat A (Group E
+   winner) and Seat B (wildcard 3rd) — plus how often each exact **A‑vs‑B** tie occurs.
 
 ### The real bracket (Round of 32, winner‑vs‑third slots)
 
@@ -67,13 +74,14 @@ It is a forward Monte Carlo simulation, run entirely in your browser:
 
 This is an explainer for fun and insight — **not** a betting tool. Ratings are approximate,
 and the exact 495‑row FIFA third‑place combination table is approximated by a valid,
-randomised matching. The defaults are pre‑tournament strength; nudge ratings to reflect
-real results and re‑run.
+randomised matching. Completed matches are locked to real scores; matches still to be
+played use the pre‑tournament strength ratings (which you can nudge and re‑run).
 
 ## 📚 Data sources
 
 - FIFA World Cup 2026 group draw & Round‑of‑32 format (FIFA / ESPN / NBC Sports / Sky Sports).
 - Boston (Gillette Stadium) hosts **Match 74** of the Round of 32 on June 29, 2026 (Gillette Stadium / CBS Boston / NESN).
+- Live group‑stage results: [openfootball/worldcup.json](https://github.com/openfootball/worldcup.json) (public‑domain).
 - Team strengths ≈ FIFA World Ranking points, June 2026 (FIFA / ESPN).
 
 *Built as an interactive World Cup explainer. The simulation runs client‑side; no data leaves your browser.*
