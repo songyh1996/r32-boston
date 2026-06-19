@@ -220,7 +220,7 @@
     <button class="runbtn" id="runBtn">▶ Run simulation</button>
     <button class="ghostbtn" id="resetBtn">Reset ratings</button>
     <div style="flex-basis:100%;display:flex;gap:18px;align-items:center;flex-wrap:wrap">
-      <label class="chk"><input type="checkbox" id="useResults" checked> Lock in real results <span id="resTag">(through MD1)</span></label>
+      <label class="chk"><input type="checkbox" id="useResults" checked> Lock in real results <span id="resTag">(live)</span></label>
       <button class="ghostbtn" id="liveBtn">↻ Refresh from live data</button>
     </div>
     <div style="flex-basis:100%">
@@ -230,7 +230,7 @@
   </div>
 
   <details class="box" id="resultsBox" open>
-    <summary>✅ Real results baked in — <span id="resultsSummary">Matchday 1 · 24 matches</span></summary>
+    <summary>✅ Real results baked in — <span id="resultsSummary">live group-stage results</span></summary>
     <div class="body">
       <p>These completed matches are <b>locked</b> in every simulation; only the remaining fixtures are simulated. Source:
         <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a>.
@@ -385,10 +385,10 @@ const FLAGS = {
 };
 // Real group-stage results, fetched from openfootball/worldcup.json.
 // Matches already played (locked); the rest are simulated. [team1, team2, goals1, goals2]
-let RESULTS_DATE = "2026-06-17";   // results through Matchday 1
+let RESULTS_DATE = "2026-06-18";   // results through Matchday 2 (Groups A & B); others MD1
 const PLAYED = {
-  A: [["Mexico","South Africa",2,0], ["South Korea","Czechia",2,1]],
-  B: [["Canada","Bosnia & Herzegovina",1,1], ["Qatar","Switzerland",1,1]],
+  A: [["Mexico","South Africa",2,0], ["South Korea","Czechia",2,1], ["Czechia","South Africa",1,1], ["Mexico","South Korea",1,0]],
+  B: [["Canada","Bosnia & Herzegovina",1,1], ["Qatar","Switzerland",1,1], ["Switzerland","Bosnia & Herzegovina",4,1], ["Canada","Qatar",6,0]],
   C: [["Brazil","Morocco",1,1], ["Haiti","Scotland",0,1]],
   D: [["United States","Paraguay",4,1], ["Australia","Türkiye",2,0]],
   E: [["Germany","Curaçao",7,1], ["Ivory Coast","Ecuador",1,0]],
