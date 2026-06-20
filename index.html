@@ -385,14 +385,14 @@ const FLAGS = {
 };
 // Real group-stage results, fetched from openfootball/worldcup.json.
 // Matches already played (locked); the rest are simulated. [team1, team2, goals1, goals2]
-let RESULTS_DATE = "2026-06-18";   // results through Matchday 2 (Groups A & B); others MD1
+let RESULTS_DATE = "2026-06-20";   // results through 20 Jun (Groups A-D done MD2; F mid-MD2; rest MD1)
 const PLAYED = {
   A: [["Mexico","South Africa",2,0], ["South Korea","Czechia",2,1], ["Czechia","South Africa",1,1], ["Mexico","South Korea",1,0]],
   B: [["Canada","Bosnia & Herzegovina",1,1], ["Qatar","Switzerland",1,1], ["Switzerland","Bosnia & Herzegovina",4,1], ["Canada","Qatar",6,0]],
-  C: [["Brazil","Morocco",1,1], ["Haiti","Scotland",0,1]],
-  D: [["United States","Paraguay",4,1], ["Australia","Türkiye",2,0]],
+  C: [["Brazil","Morocco",1,1], ["Haiti","Scotland",0,1], ["Scotland","Morocco",0,1], ["Brazil","Haiti",3,0]],
+  D: [["United States","Paraguay",4,1], ["Australia","Türkiye",2,0], ["United States","Australia",2,0], ["Türkiye","Paraguay",0,1]],
   E: [["Germany","Curaçao",7,1], ["Ivory Coast","Ecuador",1,0]],
-  F: [["Netherlands","Japan",2,2], ["Sweden","Tunisia",5,1]],
+  F: [["Netherlands","Japan",2,2], ["Sweden","Tunisia",5,1], ["Netherlands","Sweden",5,1]],
   G: [["Belgium","Egypt",1,1], ["Iran","New Zealand",2,2]],
   H: [["Spain","Cape Verde",0,0], ["Saudi Arabia","Uruguay",1,1]],
   I: [["France","Senegal",3,1], ["Iraq","Norway",1,4]],
