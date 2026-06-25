@@ -245,6 +245,14 @@
   .trow.koreahl{background:rgba(58,208,194,.10);box-shadow:inset 0 0 0 1px rgba(58,208,194,.4);opacity:1}
   .cutline{display:flex;align-items:center;gap:10px;margin:9px 2px;color:var(--acc2);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
   .cutline::before,.cutline::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--acc2),transparent)}
+  .qcallout{background:rgba(255,210,74,.07);border:1px solid rgba(255,210,74,.28);border-radius:12px;padding:12px 15px;margin:0 0 14px;color:var(--mut);font-size:13px;line-height:1.55}
+  .qcallout b{color:var(--acc2)}
+  .tstat{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:99px;margin-left:8px;vertical-align:1px;white-space:nowrap}
+  .tstat.lock{background:rgba(58,208,194,.16);color:var(--acc)}
+  .tstat.play{background:rgba(255,210,74,.14);color:var(--acc2)}
+  .trow.proj .nm{font-style:italic;color:var(--mut)}
+  .trow.proj .fl{opacity:.8}
+  .trow.proj .pts{font-style:italic}
 
   footer{margin-top:40px;color:var(--mut2);font-size:12.5px;text-align:center;line-height:1.7}
   footer a{color:var(--mut)}
@@ -407,8 +415,8 @@
     </div>
 
     <h2 class="sec">The third-place race — 8 of 12 qualify</h2>
-    <div class="panel" style="padding:14px 18px">
-      <p class="desc" style="margin:4px 6px 10px">Each group's projected 3rd-place team, ranked by their chance of being one of the eight that advance. ✓ = group finished (third locked).</p>
+    <div class="panel" style="padding:16px 18px">
+      <div class="qcallout" id="koCallout"></div>
       <div id="thirdRace"></div>
     </div>
   </div><!-- /tabThird -->
@@ -826,13 +834,21 @@ function renderThird(){
     : 'Korea can still finish anywhere in Group '+kg+'; if they end up 3rd they need to be a <b>top-8 third</b>. ')
     + 'Teams near the cut line: '+rivals.map(t=>(FLAGS[t]||'')+' '+t).join(', ')+'.';
 
+  // Callout: how many thirds are settled vs still to play (adapts as groups finish)
+  const lockedRows=rows.filter(r=>r.locked), nLock=lockedRows.length, nPlay=12-nLock;
+  const callout=document.getElementById('koCallout');
+  if(callout) callout.innerHTML = nPlay>0
+    ? '🔒 Only <b>'+nLock+' of 12</b> third-place spots are settled ('+lockedRows.map(r=>(FLAGS[r.team]||'')+' '+r.team).join(', ')+'). The other <b>'+nPlay+'</b> group'+(nPlay>1?'s':'')+' still play their final match — those teams can climb <b>above</b> Korea. Rows are ranked by each team’s <b>chance to finish in the top 8</b>, so this is a live projection, not a settled table.'
+    : 'All 12 groups are complete — these are the final eight best third-place qualifiers.';
+
   const wrap=document.getElementById('thirdRace'); wrap.innerHTML='';
   rows.forEach((r,i)=>{
     if(i===8){ const cl=document.createElement('div'); cl.className='cutline'; cl.textContent='✂ qualification cut-off — top 8 advance'; wrap.appendChild(cl); }
-    const d=document.createElement('div'); d.className='trow '+(i<8?'in':'out')+(r.g===kg?' koreahl':'');
+    const d=document.createElement('div'); d.className='trow '+(i<8?'in':'out')+(r.locked?'':' proj')+(r.g===kg?' koreahl':'');
     const pts=(r.locked? r.pts.toFixed(0) : '≈'+r.pts.toFixed(1))+' pts · GD '+(r.gd>=0?'+':'')+r.gd.toFixed(r.locked?0:1);
+    const stat=r.locked?'<span class="tstat lock">✓ locked</span>':'<span class="tstat play">⏳ to play</span>';
     d.innerHTML='<div class="rk">'+(i+1)+'</div><div class="fl">'+(FLAGS[r.team]||'')+'</div>'+
-      '<div class="nm">'+r.team+'<span class="gl">Grp '+r.g+(r.locked?' ✓':'')+'</span></div>'+
+      '<div class="nm">'+r.team+'<span class="gl">Grp '+r.g+'</span>'+stat+'</div>'+
       '<div class="pts">'+pts+'</div><div class="qp">'+r.q.toFixed(0)+'%</div>';
     wrap.appendChild(d);
   });
