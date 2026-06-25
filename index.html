@@ -188,7 +188,8 @@
   .resm .tn.w{color:var(--txt);font-weight:700}
 
   /* TABS */
-  .tabbar{display:flex;gap:6px;margin:30px 0 2px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .tabbar{display:flex;gap:6px;margin:24px 0 14px;border-bottom:1px solid var(--line);flex-wrap:wrap;
+    position:sticky;top:0;z-index:20;background:var(--bg);padding-top:10px}
   .tabbtn{background:transparent;border:0;border-bottom:3px solid transparent;color:var(--mut);
     font-weight:800;font-size:15px;padding:12px 18px;cursor:pointer;margin-bottom:-1px}
   .tabbtn:hover{color:var(--txt)}
@@ -206,7 +207,7 @@
   .reachbig{text-align:right}
   .reachbig b{font-size:34px;font-weight:900;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
   .reachbig small{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut2);font-weight:700}
-  .finishbars{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:6px}
+  .finishbars{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:6px}
   .fb{background:#0c1426;border:1px solid var(--line);border-radius:10px;padding:11px 6px;text-align:center}
   .fb .v{font-size:19px;font-weight:900;font-variant-numeric:tabular-nums}
   .fb .l{font-size:10.5px;color:var(--mut2);margin-top:3px;letter-spacing:.03em}
@@ -266,7 +267,7 @@
     </div>
   </div>
 
-  <details class="box" id="resultsBox" open>
+  <details class="box" id="resultsBox">
     <summary>✅ Real results baked in — <span id="resultsSummary">live group-stage results</span></summary>
     <div class="body">
       <p>These completed matches are <b>locked</b> in every simulation; only the remaining fixtures are simulated. Source:
@@ -345,7 +346,10 @@
     </div>
 
     <h2 class="sec">How they finish Group <span id="fGrp">A</span></h2>
-    <div class="panel" style="padding:16px 20px"><div class="finishbars" id="fFinish"></div></div>
+    <div class="panel" style="padding:16px 20px">
+      <div class="finishbars" id="fFinish"></div>
+      <p class="seatfoot">These four add up to 100%. Finishing 3rd only reaches the Round of 32 as one of the 8 best third-place teams — hence the reach rate above can be below 1st + 2nd + 3rd.</p>
+    </div>
 
     <h2 class="sec">Their R32 path &amp; most likely opponent, by scenario</h2>
     <div class="panel" style="padding:18px 20px"><div class="scen" id="fScen"></div></div>
@@ -541,7 +545,7 @@ function lockedScore(played,a,b){
 }
 function simGroup(teams,played){
   const st={};
-  for(const t of teams) st[t]={team:t,pts:0,gf:0,ga:0,gd:0,h2h:{}};
+  for(const t of teams) st[t]={team:t,pts:0,gf:0,ga:0,gd:0,h2h:{},rk:Math.random()};
   for(let i=0;i<4;i++) for(let j=i+1;j<4;j++){
     const a=teams[i],b=teams[j];
     let r=lockedScore(played,a,b); if(!r) r=simMatch(RATINGS[a],RATINGS[b]);
@@ -558,7 +562,7 @@ function simGroup(teams,played){
     if(y.gf!==x.gf)return y.gf-x.gf;
     const hx=x.h2h[y.team],hy=y.h2h[x.team];
     if(hx!==undefined&&hx!==hy)return hy-hx;
-    return Math.random()-0.5;
+    return x.rk-y.rk;            // stable per-team key (transitive tiebreak)
   });
 }
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;const t=a[i];a[i]=a[j];a[j]=t;}return a;}
@@ -595,9 +599,9 @@ function simOnce(a){
   const standings={}, thirds=[];
   for(const g in GROUPS){
     const r=simGroup(GROUPS[g], lockResults?PLAYED[g]:null); standings[g]=r;
-    thirds.push({group:g, team:r[2].team, pts:r[2].pts, gd:r[2].gd, gf:r[2].gf});
+    thirds.push({group:g, team:r[2].team, pts:r[2].pts, gd:r[2].gd, gf:r[2].gf, rk:Math.random()});
   }
-  thirds.sort((x,y)=> y.pts-x.pts || y.gd-x.gd || y.gf-x.gf || Math.random()-0.5);
+  thirds.sort((x,y)=> y.pts-x.pts || y.gd-x.gd || y.gf-x.gf || x.rk-y.rk);  // transitive tiebreak
   const qual=thirds.slice(0,8), qg=qual.map(t=>t.group);
   const we=standings['E'][0].team;     // Seat A: Group E winner
   a.winE[we]++;
@@ -748,14 +752,11 @@ function renderFocus(){
   const reached=Object.values(acc.fRows).reduce((s,v)=>s+v,0);
   const elim=n-reached;
   const fb=document.getElementById('fFinish'); fb.innerHTML='';
-  ['Win group','Runner-up','3rd place','4th place'].forEach((lab,i)=>{
+  ['Win group','Runner-up','3rd place','4th place'].forEach((lab,i)=>{   // partition of group finish = 100%
     const d=document.createElement('div'); d.className='fb'+(i===0?' win':'');
     d.innerHTML='<div class="v">'+(100*acc.fFinish[i]/n).toFixed(0)+'%</div><div class="l">'+lab+'</div>';
     fb.appendChild(d);
   });
-  const de=document.createElement('div'); de.className='fb elim';
-  de.innerHTML='<div class="v">'+(100*elim/n).toFixed(0)+'%</div><div class="l">Eliminated</div>';
-  fb.appendChild(de);
   document.getElementById('fReach').textContent=(100*reached/n).toFixed(0)+'%';
 
   // Aggregate fRows -> byMatch (scenario) and overall opponent totals
@@ -896,7 +897,7 @@ function buildFocusSelect(){
   let html='';
   Object.keys(GROUPS).forEach(g=>{
     html+='<optgroup label="Group '+g+'">';
-    GROUPS[g].forEach(t=>{ html+='<option value="'+t.replace(/"/g,'&quot;')+'"'+(t===FOCUS?' selected':'')+'>'+t+'</option>'; });
+    GROUPS[g].forEach(t=>{ const e=t.replace(/&/g,'&amp;').replace(/"/g,'&quot;'); html+='<option value="'+e+'"'+(t===FOCUS?' selected':'')+'>'+e+'</option>'; });
     html+='</optgroup>';
   });
   sel.innerHTML=html;
