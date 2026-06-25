@@ -187,6 +187,43 @@
   .resm .tn{color:var(--mut);overflow:hidden;text-overflow:ellipsis}
   .resm .tn.w{color:var(--txt);font-weight:700}
 
+  /* TABS */
+  .tabbar{display:flex;gap:6px;margin:30px 0 2px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .tabbtn{background:transparent;border:0;border-bottom:3px solid transparent;color:var(--mut);
+    font-weight:800;font-size:15px;padding:12px 18px;cursor:pointer;margin-bottom:-1px}
+  .tabbtn:hover{color:var(--txt)}
+  .tabbtn.active{color:var(--txt);border-bottom-color:var(--acc)}
+  .tabpane{display:none} .tabpane.active{display:block}
+
+  /* FOCUS (any-team) MODE */
+  .focushead{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:20px 22px}
+  .focushead .fflag{font-size:52px;line-height:1}
+  .focushead .ftxt{flex:1 1 240px}
+  .focushead .ftxt .k{font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:var(--mut2)}
+  .focushead .ftxt h3{margin:3px 0;font-size:23px;font-weight:900}
+  .focushead select{background:#0c1426;border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:9px 12px;font-size:14px;font-weight:700;cursor:pointer}
+  .focushead select:focus{outline:none;border-color:var(--acc)}
+  .reachbig{text-align:right}
+  .reachbig b{font-size:34px;font-weight:900;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .reachbig small{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut2);font-weight:700}
+  .finishbars{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:6px}
+  .fb{background:#0c1426;border:1px solid var(--line);border-radius:10px;padding:11px 6px;text-align:center}
+  .fb .v{font-size:19px;font-weight:900;font-variant-numeric:tabular-nums}
+  .fb .l{font-size:10.5px;color:var(--mut2);margin-top:3px;letter-spacing:.03em}
+  .fb.win .v{color:var(--acc)} .fb.elim .v{color:var(--red)}
+  .scen{display:flex;flex-direction:column;gap:11px}
+  .scenrow{border:1px solid var(--line);border-radius:12px;padding:13px 15px;background:var(--card2)}
+  .scenrow .sh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:8px}
+  .scenrow .sh .lab{font-weight:800;font-size:14px}
+  .scenrow .sh .lab .vn{color:var(--mut2);font-weight:600;font-size:12px;margin-left:7px}
+  .scenrow .sh .pr{font-weight:900;color:var(--acc);font-variant-numeric:tabular-nums}
+  .scenrow.boston{box-shadow:inset 0 0 0 1px rgba(58,208,194,.45)}
+  .scenrow.boston .sh .pr{color:var(--acc2)}
+  .scenrow .opps{display:flex;flex-wrap:wrap;gap:6px}
+  .scenrow .opp{display:inline-flex;align-items:center;gap:5px;background:#0c1426;border:1px solid var(--line);border-radius:99px;padding:3px 10px;font-size:12.5px;color:var(--mut)}
+  .scenrow .opp b{color:var(--txt);font-variant-numeric:tabular-nums}
+  .elimnote{color:var(--mut);font-size:13px;text-align:center;padding:6px}
+
   footer{margin-top:40px;color:var(--mut2);font-size:12.5px;text-align:center;line-height:1.7}
   footer a{color:var(--mut)}
   .pill{display:inline-block;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:3px 10px;margin:3px;font-size:12px;color:var(--mut)}
@@ -239,6 +276,12 @@
     </div>
   </details>
 
+  <div class="tabbar">
+    <button class="tabbtn active" id="tabBtnBoston" data-tab="Boston">🏟️ Boston Round of 32</button>
+    <button class="tabbtn" id="tabBtnFocus" data-tab="Focus">🧭 Any team's R32 opponent</button>
+  </div>
+
+  <div id="tabBoston" class="tabpane active">
   <h2 class="sec">The most likely Boston matchup</h2>
   <div class="panel mcard" id="matchCard">
     <div class="mside s1">
@@ -285,6 +328,41 @@
       <div class="grpshare" id="grpShare"></div>
     </div>
   </div>
+
+  </div><!-- /tabBoston -->
+
+  <div id="tabFocus" class="tabpane">
+    <h2 class="sec">Who will they play in the Round of 32?</h2>
+    <div class="panel focushead">
+      <div class="fflag" id="fFlag">🇰🇷</div>
+      <div class="ftxt">
+        <div class="k">Round-of-32 opponent projector</div>
+        <h3 id="fName">South Korea</h3>
+        <label style="font-size:12.5px;color:var(--mut);font-weight:600">Project a different team:
+          <select id="focusSel"></select></label>
+      </div>
+      <div class="reachbig"><b id="fReach">—</b><small>reach Round of 32</small></div>
+    </div>
+
+    <h2 class="sec">How they finish Group <span id="fGrp">A</span></h2>
+    <div class="panel" style="padding:16px 20px"><div class="finishbars" id="fFinish"></div></div>
+
+    <h2 class="sec">Their R32 path &amp; most likely opponent, by scenario</h2>
+    <div class="panel" style="padding:18px 20px"><div class="scen" id="fScen"></div></div>
+
+    <div class="cols" style="margin-top:18px">
+      <div class="panel pcard">
+        <h3>🎯 Most likely R32 opponents</h3>
+        <p class="desc">Across every path — win the group, runner-up, or sneak through in 3rd — who they're most likely to face:</p>
+        <div id="fOpps"></div>
+      </div>
+      <div class="panel pcard">
+        <h3>📍 Where they'd play</h3>
+        <p class="desc">Their Round-of-32 venue depends on where they finish the group:</p>
+        <div id="fVenues" class="grpshare"></div>
+      </div>
+    </div>
+  </div><!-- /tabFocus -->
 
   <details class="box">
     <summary>How this works — methodology &amp; assumptions</summary>
@@ -414,7 +492,36 @@ const SLOTS = Object.keys(SLOT_ELIG);
 const GROUP_OF = {};
 for (const g in GROUPS) GROUPS[g].forEach(t=>GROUP_OF[t]=g);
 
+// Full Round-of-32 bracket (match no., date, venue, and the two slots).
+// Slot: {t:'1'|'2', g:group}  or  {t:'3', from:[eligible groups]} (winner-vs-third).
+const R32_MATCHES = [
+  {n:73, date:'Jun 28', venue:'Los Angeles',          a:{t:'2',g:'A'}, b:{t:'2',g:'B'}},
+  {n:74, date:'Jun 29', venue:'Boston',               a:{t:'1',g:'E'}, b:{t:'3',from:['A','B','C','D','F']}},
+  {n:75, date:'Jun 29', venue:'Monterrey',            a:{t:'1',g:'F'}, b:{t:'2',g:'C'}},
+  {n:76, date:'Jun 29', venue:'Houston',              a:{t:'1',g:'C'}, b:{t:'2',g:'F'}},
+  {n:77, date:'Jun 30', venue:'New York/New Jersey',  a:{t:'1',g:'I'}, b:{t:'3',from:['C','D','F','G','H']}},
+  {n:78, date:'Jun 30', venue:'Dallas',               a:{t:'2',g:'E'}, b:{t:'2',g:'I'}},
+  {n:79, date:'Jun 30', venue:'Mexico City',          a:{t:'1',g:'A'}, b:{t:'3',from:['C','E','F','H','I']}},
+  {n:80, date:'Jul 1',  venue:'Atlanta',              a:{t:'1',g:'L'}, b:{t:'3',from:['E','H','I','J','K']}},
+  {n:81, date:'Jul 1',  venue:'San Francisco Bay',    a:{t:'1',g:'D'}, b:{t:'3',from:['B','E','F','I','J']}},
+  {n:82, date:'Jul 1',  venue:'Seattle',              a:{t:'1',g:'G'}, b:{t:'3',from:['A','E','H','I','J']}},
+  {n:83, date:'Jul 2',  venue:'Toronto',              a:{t:'2',g:'K'}, b:{t:'2',g:'L'}},
+  {n:84, date:'Jul 2',  venue:'Los Angeles',          a:{t:'1',g:'H'}, b:{t:'2',g:'J'}},
+  {n:85, date:'Jul 2',  venue:'Vancouver',            a:{t:'1',g:'B'}, b:{t:'3',from:['E','F','G','I','J']}},
+  {n:86, date:'Jul 3',  venue:'Miami',                a:{t:'1',g:'J'}, b:{t:'2',g:'H'}},
+  {n:87, date:'Jul 3',  venue:'Kansas City',          a:{t:'1',g:'K'}, b:{t:'3',from:['D','E','I','J','L']}},
+  {n:88, date:'Jul 3',  venue:'Dallas',               a:{t:'2',g:'D'}, b:{t:'2',g:'G'}}
+];
+// Index concrete winner/runner-up slots -> their match + the opposing slot.
+const SLOT_MATCH = {};
+R32_MATCHES.forEach(mt=>{
+  [[mt.a,mt.b],[mt.b,mt.a]].forEach(([s,o])=>{
+    if(s.t==='1'||s.t==='2') SLOT_MATCH[s.t+s.g]={n:mt.n,venue:mt.venue,date:mt.date,opp:o};
+  });
+});
+
 let RATINGS = Object.assign({}, DEFAULT_RATINGS);
+let FOCUS = "South Korea";   // team whose R32 opponent we project (Korea mode)
 
 /* --------------------------- SIM ENGINE ------------------------- */
 const DIV = 210, TOTAL = 2.6;
@@ -481,7 +588,8 @@ let acc, runningToken=0, lockResults=true;
 function freshAcc(){
   const z={}; for(const t in RATINGS) z[t]=0;
   return {n:0, winE:Object.assign({},z), third:Object.assign({},z),
-          grp:{A:0,B:0,C:0,D:0,F:0}, pair:{}};
+          grp:{A:0,B:0,C:0,D:0,F:0}, pair:{},
+          fFinish:[0,0,0,0], fRows:{}};   // focus-team finish + (match|opponent) counts
 }
 function simOnce(a){
   const standings={}, thirds=[];
@@ -499,6 +607,25 @@ function simOnce(a){
     a.third[bteam]++; a.grp[bg]++;
     const key=we+'|'+bteam; a.pair[key]=(a.pair[key]||0)+1;
   }
+
+  // ---- Focus team's Round-of-32 match + opponent (Korea mode) ----
+  const fg=GROUP_OF[FOCUS], fr=standings[fg];
+  let pos=0; while(pos<4 && fr[pos].team!==FOCUS) pos++;
+  if(pos<4) a.fFinish[pos]++;
+  let mN=0, opp=null;
+  if(pos===0){                       // group winner -> slot 1+fg
+    const sm=SLOT_MATCH['1'+fg]; mN=sm.n;
+    if(sm.opp.t==='3'){ const g3=asg?asg['1'+fg]:null; opp=g3?standings[g3][2].team:null; }
+    else opp=standings[sm.opp.g][sm.opp.t==='1'?0:1].team;
+  }else if(pos===1){                 // runner-up -> slot 2+fg (opponent always concrete)
+    const sm=SLOT_MATCH['2'+fg]; mN=sm.n;
+    opp=standings[sm.opp.g][sm.opp.t==='1'?0:1].team;
+  }else if(pos===2 && asg){          // 3rd place: advances only if assigned to a winner slot
+    let ws=null; for(const k in asg){ if(asg[k]===fg){ ws=k; break; } }
+    if(ws){ mN=SLOT_MATCH[ws].n; opp=standings[ws.slice(1)][0].team; }
+  }
+  if(mN&&opp){ const k=mN+'|'+opp; a.fRows[k]=(a.fRows[k]||0)+1; }
+
   a.n++;
 }
 
@@ -605,6 +732,89 @@ function render(){
     el.title='Group '+o.g+' ('+GROUPS[o.g].join(', ')+') supplies Boston’s 3rd-place team in '+o.p.toFixed(1)+'% of runs';
     gsWrap.appendChild(el);
   });
+
+  renderFocus();
+}
+
+/* ------------------- FOCUS (any-team R32 opponent) -------------- */
+const MATCH_BY_NUM={}; R32_MATCHES.forEach(m=>MATCH_BY_NUM[m.n]=m);
+function renderFocus(){
+  const n=acc.n||1, fg=GROUP_OF[FOCUS];
+  document.getElementById('fFlag').textContent=FLAGS[FOCUS]||'🏳️';
+  document.getElementById('fName').textContent=FOCUS;
+  document.getElementById('fGrp').textContent=fg;
+
+  // Finish distribution (+ eliminated cell)
+  const reached=Object.values(acc.fRows).reduce((s,v)=>s+v,0);
+  const elim=n-reached;
+  const fb=document.getElementById('fFinish'); fb.innerHTML='';
+  ['Win group','Runner-up','3rd place','4th place'].forEach((lab,i)=>{
+    const d=document.createElement('div'); d.className='fb'+(i===0?' win':'');
+    d.innerHTML='<div class="v">'+(100*acc.fFinish[i]/n).toFixed(0)+'%</div><div class="l">'+lab+'</div>';
+    fb.appendChild(d);
+  });
+  const de=document.createElement('div'); de.className='fb elim';
+  de.innerHTML='<div class="v">'+(100*elim/n).toFixed(0)+'%</div><div class="l">Eliminated</div>';
+  fb.appendChild(de);
+  document.getElementById('fReach').textContent=(100*reached/n).toFixed(0)+'%';
+
+  // Aggregate fRows -> byMatch (scenario) and overall opponent totals
+  const byMatch={}, oppTot={};
+  for(const k in acc.fRows){
+    const i=k.indexOf('|'), mn=+k.slice(0,i), opp=k.slice(i+1), c=acc.fRows[k];
+    (byMatch[mn]=byMatch[mn]||{tot:0,opps:{}}); byMatch[mn].tot+=c;
+    byMatch[mn].opps[opp]=(byMatch[mn].opps[opp]||0)+c;
+    oppTot[opp]=(oppTot[opp]||0)+c;
+  }
+  const scenarioLabel=mn=>{
+    const m=MATCH_BY_NUM[mn];
+    if((m.a.t==='1'&&m.a.g===fg)||(m.b.t==='1'&&m.b.g===fg)) return 'Win Group '+fg;
+    if((m.a.t==='2'&&m.a.g===fg)||(m.b.t==='2'&&m.b.g===fg)) return 'Finish runner-up';
+    return 'Sneak through 3rd';
+  };
+
+  // Scenario cards (one per R32 match the team can reach), sorted by likelihood
+  const scen=document.getElementById('fScen'); scen.innerHTML='';
+  Object.keys(byMatch).map(Number).sort((a,b)=>byMatch[b].tot-byMatch[a].tot).forEach(mn=>{
+    const m=MATCH_BY_NUM[mn], info=byMatch[mn], boston=(mn===74);
+    const opps=Object.keys(info.opps).map(o=>({o,c:info.opps[o]})).sort((x,y)=>y.c-x.c).slice(0,6);
+    const oppsHtml=opps.map(o=>'<span class="opp">'+(FLAGS[o.o]||'')+' '+o.o+' <b>'+(100*o.c/info.tot).toFixed(0)+'%</b></span>').join('');
+    const row=document.createElement('div'); row.className='scenrow'+(boston?' boston':'');
+    row.innerHTML='<div class="sh"><div class="lab">'+scenarioLabel(mn)+
+      '<span class="vn">→ '+m.venue+' · '+m.date+' · Match '+mn+(boston?' · 🏟️ the Boston game!':'')+'</span></div>'+
+      '<div class="pr">'+(100*info.tot/n).toFixed(1)+'%</div></div>'+
+      '<div class="opps">'+(oppsHtml||'<span class="opp">opponent still open</span>')+'</div>';
+    scen.appendChild(row);
+  });
+  const en=document.createElement('div'); en.className='elimnote';
+  en.textContent='…or knocked out in the group stage — '+(100*elim/n).toFixed(1)+'%';
+  scen.appendChild(en);
+
+  // Overall opponent leaderboard
+  const oppList=Object.keys(oppTot).map(o=>({o,c:oppTot[o]})).sort((x,y)=>y.c-x.c);
+  const maxO=oppList[0]?oppList[0].c:1;
+  const ol=document.getElementById('fOpps'); ol.innerHTML='';
+  if(!oppList.length) ol.innerHTML='<p class="desc">This team is currently projected to miss the Round of 32.</p>';
+  oppList.slice(0,12).forEach((o,i)=>{
+    const d=document.createElement('div'); d.className='row seatrow';
+    d.innerHTML='<div class="rank">'+(i+1)+'</div><div class="fl">'+(FLAGS[o.o]||'')+'</div>'+
+      '<div class="main"><div class="top"><div class="nm">'+o.o+'<span class="grp">Grp '+GROUP_OF[o.o]+'</span></div>'+
+      '<div class="pct">'+(100*o.c/n).toFixed(1)+'%</div></div>'+
+      '<div class="bar"><div class="seg third" style="width:'+(o.c/maxO*100).toFixed(1)+'%"></div></div></div>';
+    ol.appendChild(d);
+  });
+
+  // Where they'd play (venue distribution)
+  const vw=document.getElementById('fVenues'); vw.innerHTML='';
+  const vlist=Object.keys(byMatch).map(Number).sort((a,b)=>byMatch[b].tot-byMatch[a].tot);
+  const maxV=vlist[0]?byMatch[vlist[0]].tot:1;
+  vlist.forEach(mn=>{
+    const m=MATCH_BY_NUM[mn];
+    const el=document.createElement('div'); el.className='gs';
+    el.innerHTML='<div class="gl">'+m.venue+'</div><div class="gbar"><i style="width:'+(byMatch[mn].tot/maxV*100).toFixed(1)+'%"></i></div><div class="gp">'+(100*byMatch[mn].tot/n).toFixed(0)+'%</div>';
+    el.title='Match '+mn+' · '+m.venue+' · '+m.date+(mn===74?' (Boston)':'');
+    vw.appendChild(el);
+  });
 }
 
 /* --------------------------- RATINGS UI ------------------------- */
@@ -681,6 +891,28 @@ async function refreshLive(){
   }finally{ btn.disabled=false; }
 }
 
+function buildFocusSelect(){
+  const sel=document.getElementById('focusSel'); if(!sel) return;
+  let html='';
+  Object.keys(GROUPS).forEach(g=>{
+    html+='<optgroup label="Group '+g+'">';
+    GROUPS[g].forEach(t=>{ html+='<option value="'+t.replace(/"/g,'&quot;')+'"'+(t===FOCUS?' selected':'')+'>'+t+'</option>'; });
+    html+='</optgroup>';
+  });
+  sel.innerHTML=html;
+  sel.addEventListener('change',()=>{ FOCUS=sel.value; run(); });   // re-run: focus stats are per-team
+}
+function setupTabs(){
+  document.querySelectorAll('.tabbtn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('.tabbtn').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.tabpane').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      document.getElementById('tab'+b.dataset.tab).classList.add('active');
+    });
+  });
+}
+
 /* ----------------------------- INIT ----------------------------- */
 document.getElementById('simRange').addEventListener('input',e=>{
   document.getElementById('simLabel').textContent=(+e.target.value).toLocaleString();
@@ -693,6 +925,8 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
   document.getElementById('status').textContent='Ratings reset to FIFA-ranking defaults. Run again.';
 });
 buildAllRatings();
+buildFocusSelect();
+setupTabs();
 renderResultsPanel();
 run(); // auto-run once on load
 </script>

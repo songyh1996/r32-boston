@@ -10,6 +10,16 @@ most likely to play in the **FIFA World Cup 2026 Round-of-32 match in Boston**
 > The app simulates the whole 48‑team group stage thousands of times and counts how
 > often each country lands in that match — then ranks them by probability.
 
+### Two modes (tabs)
+
+1. **🏟️ Boston Round of 32** — the A‑vs‑B matchup for Match 74: the two seat races
+   (Group E winner vs wildcard 3rd) and the most likely exact ties.
+2. **🧭 Any team's R32 opponent** — pick *any* of the 48 teams and see how it finishes
+   its group, whether it reaches the Round of 32, and **who it would most likely play**
+   (by scenario: win the group / runner‑up / sneak through 3rd), with the venue for each
+   path. (Defaults to **South Korea**. Fun fact it surfaces: if Korea finishes 3rd it can
+   actually end up *in the Boston match vs Germany*.)
+
 ## ▶️ View it
 
 The page is a single, self‑contained `index.html` (no build step, no dependencies).
