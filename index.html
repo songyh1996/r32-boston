@@ -225,6 +225,27 @@
   .scenrow .opp b{color:var(--txt);font-variant-numeric:tabular-nums}
   .elimnote{color:var(--mut);font-size:13px;text-align:center;padding:6px}
 
+  /* THIRD-PLACE (Korea ticket) TAB */
+  .qhead{display:flex;align-items:center;justify-content:space-between;gap:22px;flex-wrap:wrap}
+  .qside{display:flex;align-items:center;gap:16px}
+  .qside .fflag{font-size:50px;line-height:1}
+  .qbig b{font-size:40px;font-weight:900;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .qbig small{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut2);font-weight:700}
+  .qgauge{flex:1 1 240px;height:14px;background:#0c1426;border:1px solid var(--line);border-radius:99px;overflow:hidden;min-width:200px}
+  .qgaugefill{height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .6s cubic-bezier(.2,.7,.2,1)}
+  .trow{display:grid;grid-template-columns:26px 28px 1fr auto 52px;gap:11px;align-items:center;padding:9px 8px;border-radius:9px}
+  .trow:hover{background:var(--card2)}
+  .trow .rk{color:var(--mut2);font-weight:800;text-align:right;font-variant-numeric:tabular-nums;font-size:13px}
+  .trow .fl{font-size:20px;text-align:center}
+  .trow .nm{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .trow .nm .gl{color:var(--mut2);font-weight:600;font-size:11px;margin-left:6px}
+  .trow .pts{color:var(--mut);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .trow .qp{font-weight:900;font-variant-numeric:tabular-nums;font-size:14px;text-align:right}
+  .trow.in .qp{color:var(--acc)} .trow.out{opacity:.62} .trow.out .qp{color:var(--mut2)}
+  .trow.koreahl{background:rgba(58,208,194,.10);box-shadow:inset 0 0 0 1px rgba(58,208,194,.4);opacity:1}
+  .cutline{display:flex;align-items:center;gap:10px;margin:9px 2px;color:var(--acc2);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+  .cutline::before,.cutline::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--acc2),transparent)}
+
   footer{margin-top:40px;color:var(--mut2);font-size:12.5px;text-align:center;line-height:1.7}
   footer a{color:var(--mut)}
   .pill{display:inline-block;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:3px 10px;margin:3px;font-size:12px;color:var(--mut)}
@@ -280,6 +301,7 @@
   <div class="tabbar">
     <button class="tabbtn active" id="tabBtnBoston" data-tab="Boston">🏟️ Boston Round of 32</button>
     <button class="tabbtn" id="tabBtnFocus" data-tab="Focus">🧭 Any team's R32 opponent</button>
+    <button class="tabbtn" id="tabBtnThird" data-tab="Third">🇰🇷 Korea's R32 ticket</button>
   </div>
 
   <div id="tabBoston" class="tabpane active">
@@ -367,6 +389,29 @@
       </div>
     </div>
   </div><!-- /tabFocus -->
+
+  <div id="tabThird" class="tabpane">
+    <h2 class="sec">🇰🇷 South Korea's road to the Round of 32</h2>
+    <div class="panel" style="padding:22px">
+      <div class="qhead">
+        <div class="qside">
+          <div class="fflag">🇰🇷</div>
+          <div>
+            <div class="k" id="koStatus">South Korea · Group A · finished 3rd (3 pts, −1 GD)</div>
+            <div class="qbig"><b id="koQual">—</b><small>chance to reach the Round of 32</small></div>
+          </div>
+        </div>
+        <div class="qgauge"><div class="qgaugefill" id="koGauge"></div></div>
+      </div>
+      <p class="seatfoot" id="koNote">Korea is locked in 3rd, so they go through only as one of the <b>8 best third-placed teams</b> (out of 12). It's now out of their hands — it depends on how the other groups' third-placers finish.</p>
+    </div>
+
+    <h2 class="sec">The third-place race — 8 of 12 qualify</h2>
+    <div class="panel" style="padding:14px 18px">
+      <p class="desc" style="margin:4px 6px 10px">Each group's projected 3rd-place team, ranked by their chance of being one of the eight that advance. ✓ = group finished (third locked).</p>
+      <div id="thirdRace"></div>
+    </div>
+  </div><!-- /tabThird -->
 
   <details class="box">
     <summary>How this works — methodology &amp; assumptions</summary>
@@ -469,7 +514,7 @@ const FLAGS = {
 // Matches already played (locked); the rest are simulated. [team1, team2, goals1, goals2]
 let RESULTS_DATE = "2026-06-24";   // Groups A, B, C complete (Group A finale entered live); others through MD2
 const PLAYED = {
-  A: [["Mexico","South Africa",2,0], ["South Korea","Czechia",2,1], ["Czechia","South Africa",1,1], ["Mexico","South Korea",1,0], ["South Africa","South Korea",1,0], ["Mexico","Czechia",2,0]],
+  A: [["Mexico","South Africa",2,0], ["South Korea","Czechia",2,1], ["Czechia","South Africa",1,1], ["Mexico","South Korea",1,0], ["South Africa","South Korea",1,0], ["Mexico","Czechia",3,0]],
   B: [["Canada","Bosnia & Herzegovina",1,1], ["Qatar","Switzerland",1,1], ["Switzerland","Bosnia & Herzegovina",4,1], ["Canada","Qatar",6,0], ["Switzerland","Canada",2,1], ["Bosnia & Herzegovina","Qatar",3,1]],
   C: [["Brazil","Morocco",1,1], ["Haiti","Scotland",0,1], ["Scotland","Morocco",0,1], ["Brazil","Haiti",3,0], ["Scotland","Brazil",0,3], ["Morocco","Haiti",4,2]],
   D: [["United States","Paraguay",4,1], ["Australia","Türkiye",2,0], ["United States","Australia",2,0], ["Türkiye","Paraguay",0,1]],
@@ -593,7 +638,8 @@ function freshAcc(){
   const z={}; for(const t in RATINGS) z[t]=0;
   return {n:0, winE:Object.assign({},z), third:Object.assign({},z),
           grp:{A:0,B:0,C:0,D:0,F:0}, pair:{},
-          fFinish:[0,0,0,0], fRows:{}};   // focus-team finish + (match|opponent) counts
+          fFinish:[0,0,0,0], fRows:{},      // focus-team finish + (match|opponent) counts
+          tQual:{}, tTeam:{}, tPts:{}, tGd:{}, koR32:0};   // third-place race + Korea reach count
 }
 function simOnce(a){
   const standings={}, thirds=[];
@@ -603,6 +649,18 @@ function simOnce(a){
   }
   thirds.sort((x,y)=> y.pts-x.pts || y.gd-x.gd || y.gf-x.gf || x.rk-y.rk);  // transitive tiebreak
   const qual=thirds.slice(0,8), qg=qual.map(t=>t.group);
+
+  // ---- Third-place race (best 8 of 12 thirds qualify) ----
+  thirds.forEach(t=>{
+    a.tPts[t.group]=(a.tPts[t.group]||0)+t.pts;
+    a.tGd[t.group]=(a.tGd[t.group]||0)+t.gd;
+    (a.tTeam[t.group]=a.tTeam[t.group]||{})[t.team]=(a.tTeam[t.group][t.team]||0)+1;
+  });
+  qg.forEach(g=>{ a.tQual[g]=(a.tQual[g]||0)+1; });
+  // Korea's true R32 odds (advance as top-2, or as a top-8 third)
+  const kgp=GROUP_OF['South Korea'], kst=standings[kgp];
+  let kp=0; while(kp<4&&kst[kp].team!=='South Korea')kp++;
+  if(kp<=1 || (kp===2 && qg.indexOf(kgp)>=0)) a.koR32++;
   const we=standings['E'][0].team;     // Seat A: Group E winner
   a.winE[we]++;
   const asg=assignThirds(qg);
@@ -738,6 +796,45 @@ function render(){
   });
 
   renderFocus();
+  renderThird();
+}
+
+/* ------------------- THIRD-PLACE RACE (Korea ticket) ----------- */
+function renderThird(){
+  const n=acc.n||1, KO='South Korea', kg=GROUP_OF[KO];
+  const koQ=100*(acc.koR32||0)/n;
+  document.getElementById('koQual').textContent=koQ.toFixed(0)+'%';
+  document.getElementById('koGauge').style.width=Math.max(2,koQ).toFixed(1)+'%';
+
+  const rows=Object.keys(GROUPS).map(g=>{
+    const teams=acc.tTeam[g]||{}; let modal='?',mc=-1;
+    for(const t in teams){ if(teams[t]>mc){mc=teams[t];modal=t;} }
+    return {g, team:modal, pts:(acc.tPts[g]||0)/n, gd:(acc.tGd[g]||0)/n,
+            q:100*(acc.tQual[g]||0)/n, locked: lockResults && (PLAYED[g]||[]).length===6};
+  }).sort((a,b)=>b.q-a.q);
+
+  // status line + note reflect whether Korea's group is actually decided
+  const kr=rows.find(r=>r.g===kg);
+  const koLocked = lockResults && (PLAYED[kg]||[]).length===6 && kr.team==='South Korea';
+  const rivals=rows.slice(6,10).filter(r=>r.g!==kg).map(r=>r.team);
+  document.getElementById('koStatus').innerHTML = koLocked
+    ? 'South Korea · Group '+kg+' · finished <b>3rd</b> ('+kr.pts.toFixed(0)+' pts, GD '+(kr.gd>=0?'+':'')+kr.gd.toFixed(0)+')'
+    : 'South Korea · Group '+kg+' · live projection (group not yet decided / results unlocked)';
+  document.getElementById('koNote').innerHTML = (koLocked
+    ? 'Korea is locked in 3rd, so they advance only as one of the <b>8 best third-placed teams</b> (of 12) — out of their hands now. '
+    : 'Korea can still finish anywhere in Group '+kg+'; if they end up 3rd they need to be a <b>top-8 third</b>. ')
+    + 'Teams near the cut line: '+rivals.map(t=>(FLAGS[t]||'')+' '+t).join(', ')+'.';
+
+  const wrap=document.getElementById('thirdRace'); wrap.innerHTML='';
+  rows.forEach((r,i)=>{
+    if(i===8){ const cl=document.createElement('div'); cl.className='cutline'; cl.textContent='✂ qualification cut-off — top 8 advance'; wrap.appendChild(cl); }
+    const d=document.createElement('div'); d.className='trow '+(i<8?'in':'out')+(r.g===kg?' koreahl':'');
+    const pts=(r.locked? r.pts.toFixed(0) : '≈'+r.pts.toFixed(1))+' pts · GD '+(r.gd>=0?'+':'')+r.gd.toFixed(r.locked?0:1);
+    d.innerHTML='<div class="rk">'+(i+1)+'</div><div class="fl">'+(FLAGS[r.team]||'')+'</div>'+
+      '<div class="nm">'+r.team+'<span class="gl">Grp '+r.g+(r.locked?' ✓':'')+'</span></div>'+
+      '<div class="pts">'+pts+'</div><div class="qp">'+r.q.toFixed(0)+'%</div>';
+    wrap.appendChild(d);
+  });
 }
 
 /* ------------------- FOCUS (any-team R32 opponent) -------------- */
