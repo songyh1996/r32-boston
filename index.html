@@ -397,13 +397,13 @@
         <div class="qside">
           <div class="fflag">🇰🇷</div>
           <div>
-            <div class="k" id="koStatus">South Korea · Group A · finished 3rd (3 pts, −1 GD)</div>
+            <div class="k" id="koStatus">South Korea · Group A · loading projection…</div>
             <div class="qbig"><b id="koQual">—</b><small>chance to reach the Round of 32</small></div>
           </div>
         </div>
         <div class="qgauge"><div class="qgaugefill" id="koGauge"></div></div>
       </div>
-      <p class="seatfoot" id="koNote">Korea is locked in 3rd, so they go through only as one of the <b>8 best third-placed teams</b> (out of 12). It's now out of their hands — it depends on how the other groups' third-placers finish.</p>
+      <p class="seatfoot" id="koNote">Calculating Korea's third-place qualification odds…</p>
     </div>
 
     <h2 class="sec">The third-place race — 8 of 12 qualify</h2>
@@ -652,9 +652,10 @@ function simOnce(a){
 
   // ---- Third-place race (best 8 of 12 thirds qualify) ----
   thirds.forEach(t=>{
-    a.tPts[t.group]=(a.tPts[t.group]||0)+t.pts;
-    a.tGd[t.group]=(a.tGd[t.group]||0)+t.gd;
-    (a.tTeam[t.group]=a.tTeam[t.group]||{})[t.team]=(a.tTeam[t.group][t.team]||0)+1;
+    const g=t.group;
+    (a.tTeam[g]=a.tTeam[g]||{})[t.team]=(a.tTeam[g][t.team]||0)+1;
+    (a.tPts[g]=a.tPts[g]||{})[t.team]=(a.tPts[g][t.team]||0)+t.pts;   // per-team sums
+    (a.tGd[g]=a.tGd[g]||{})[t.team]=(a.tGd[g][t.team]||0)+t.gd;
   });
   qg.forEach(g=>{ a.tQual[g]=(a.tQual[g]||0)+1; });
   // Korea's true R32 odds (advance as top-2, or as a top-8 third)
@@ -808,9 +809,9 @@ function renderThird(){
 
   const rows=Object.keys(GROUPS).map(g=>{
     const teams=acc.tTeam[g]||{}; let modal='?',mc=-1;
-    for(const t in teams){ if(teams[t]>mc){mc=teams[t];modal=t;} }
-    return {g, team:modal, pts:(acc.tPts[g]||0)/n, gd:(acc.tGd[g]||0)/n,
-            q:100*(acc.tQual[g]||0)/n, locked: lockResults && (PLAYED[g]||[]).length===6};
+    for(const t in teams){ if(teams[t]>mc || (teams[t]===mc && (RATINGS[t]||0)>(RATINGS[modal]||0))){mc=teams[t];modal=t;} }
+    const pts=((acc.tPts[g]||{})[modal]||0)/(mc||1), gd=((acc.tGd[g]||{})[modal]||0)/(mc||1);  // modal team's own line
+    return {g, team:modal, pts, gd, q:100*(acc.tQual[g]||0)/n, locked: lockResults && (PLAYED[g]||[]).length===6};
   }).sort((a,b)=>b.q-a.q);
 
   // status line + note reflect whether Korea's group is actually decided
