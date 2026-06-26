@@ -1165,9 +1165,14 @@ function renderThird(){
     : tt(TN(KO)+' · Group '+kg+' · live projection (group not yet decided)',
          TN(KO)+' · 그룹 '+kg+' · 실시간 예측 (조 미확정)');
   const riv=rivals.map(t=>(FLAGS[t]||'')+' '+TN(t)).join(', ');
+  const koRank=rows.findIndex(r=>r.g===kg)+1, koIn=koRank<=8;
+  const nPlayG=Object.keys(GROUPS).filter(g=>!(lockResults&&(PLAYED[g]||[]).length===6)).length;
   document.getElementById('koNote').innerHTML = koLocked
-    ? tt('Korea has finished 3rd, so they advance only as one of the <b>8 best third-placed teams</b> (of 12) — out of their hands now. Teams near the cut line: '+riv+'.',
-         '한국은 3위로 마쳐서 <b>최상위 8개 3위 팀</b>(12개 중)에 들어야만 진출합니다 — 이제 한국 손을 떠났습니다. 커트라인 근처 팀: '+riv+'.')
+    ? (koIn
+        ? tt('Korea finished 3rd and sits <b>'+koRank+'th of 12</b> thirds — currently <b>inside the top-8 cut</b>, but the '+nPlayG+' group'+(nPlayG>1?'s':'')+' still to play can change that. Teams near the cut line: '+riv+'.',
+             '한국은 3위로 마감, 12개 3위 중 현재 <b>'+koRank+'위</b> — <b>컷 안</b>입니다. 다만 아직 안 끝난 '+nPlayG+'개 조 결과로 바뀔 수 있어요. 커트라인 근처 팀: '+riv+'.')
+        : tt('Korea finished 3rd and sits <b>'+koRank+'th of 12</b> thirds — currently <b>below the cut, but NOT eliminated</b>: '+nPlayG+' group'+(nPlayG>1?'s':'')+' still to play, and Korea climbs back if enough go their way. Teams near the cut line: '+riv+'.',
+             '한국은 3위로 마감, 12개 3위 중 현재 <b>'+koRank+'위</b> — <b>컷 밖이지만 아직 탈락은 아닙니다</b>. 남은 '+nPlayG+'개 조가 한국에 유리하게 끝나면 다시 올라섭니다. 커트라인 근처 팀: '+riv+'.'))
     : tt('Korea can still finish anywhere in Group '+kg+'; if they end up 3rd they need to be a <b>top-8 third</b>. Teams near the cut line: '+riv+'.',
          '한국은 아직 그룹 '+kg+'에서 어떤 순위로도 마칠 수 있고, 3위로 마치면 <b>최상위 8개 3위</b>에 들어야 합니다. 커트라인 근처 팀: '+riv+'.');
 
