@@ -929,6 +929,43 @@ function enumGroup(g){
   v.sort((a,b)=>b.spread-a.spread);
   return {fav:100*fav/tot, decisive:v[0]};
 }
+// For a FINISHED group: which played match mattered most to "is this group's 3rd below
+// Korea?" — re-score the group varying each match's result, pick the highest-spread one,
+// and return that match's ACTUAL result. (The retrospective twin of enumGroup's decisive match.)
+function pivotalPlayed(g){
+  const teams=GROUPS[g], played=PLAYED[g]||[]; if(played.length!==6) return null;
+  const ka=baseStandObj('A')['South Korea']; const koP=ka.pts, koGd=ka.gf-ka.ga, koGf=ka.gf;
+  const MX=8;
+  const belowKor=ms=>{
+    const st={}; teams.forEach(t=>st[t]={pts:0,gf:0,ga:0});
+    ms.forEach(([a,b,x,y])=>{ st[a].gf+=x;st[a].ga+=y;st[b].gf+=y;st[b].ga+=x;
+      if(x>y)st[a].pts+=3; else if(y>x)st[b].pts+=3; else {st[a].pts++;st[b].pts++;} });
+    const rows=teams.map(t=>({pts:st[t].pts,gd:st[t].gf-st[t].ga,gf:st[t].gf})).sort((p,q)=>q.pts-p.pts||q.gd-p.gd||q.gf-p.gf);
+    const th=rows[2];
+    return (th.pts<koP || (th.pts===koP&&th.gd<koGd) || (th.pts===koP&&th.gd===koGd&&th.gf<koGf))?1:0;
+  };
+  let best=played[5], bestSpread=-1;
+  played.forEach((m,mi)=>{
+    const t={w0:[0,0],draw:[0,0],w1:[0,0]};
+    for(let x=0;x<MX;x++)for(let y=0;y<MX;y++){
+      const alt=played.map((mm,j)=> j===mi?[mm[0],mm[1],x,y]:mm);
+      const w=belowKor(alt), lab=x>y?'w0':(y>x?'w1':'draw'); t[lab][1]++; t[lab][0]+=w;
+    }
+    const h=r=>t[r][1]?100*t[r][0]/t[r][1]:0;
+    const spread=Math.max(h('w0'),h('draw'),h('w1'))-Math.min(h('w0'),h('draw'),h('w1'));
+    if(spread>bestSpread){ bestSpread=spread; best=m; }
+  });
+  return best;   // [teamA, teamB, goalsA, goalsB]
+}
+// Plain-English "A beat B (2–1)" / "A & B drew (0–0)" from a played match, in the pending tone.
+function resultHTML(m){
+  const a=m[0],b=m[1],ga=m[2],gb=m[3], FL=t=>'<b>'+(FLAGS[t]||'')+' '+TN(t)+'</b>';
+  const sp=t=>_jong(TN(t))?'이':'가', op=t=>_jong(TN(t))?'을':'를', wp=t=>_jong(TN(t))?'과':'와';
+  const sc=' <span class="bynote">('+Math.max(ga,gb)+'–'+Math.min(ga,gb)+')</span>';
+  if(ga===gb) return (LANG==='ko' ? FL(a)+wp(a)+' '+FL(b)+' 무승부' : FL(a)+' &amp; '+FL(b)+' drew')+' <span class="bynote">('+ga+'–'+gb+')</span>';
+  const w=ga>gb?a:b, l=ga>gb?b:a;
+  return (LANG==='ko' ? FL(w)+sp(w)+' '+FL(l)+op(l)+' 이김' : FL(w)+' beat '+FL(l))+sc;
+}
 // Turn per-result help shares into a plain-English condition.
 // hA/hD/hB = % of scorelines in which "A wins / draw / B wins" leaves this group's
 // 3rd-placer WEAKER than Korea. We state what is NECESSARY, and only say "seals it"
@@ -996,11 +1033,11 @@ function renderBoard(){
   const cards=[];
   NONA.forEach(g=>{
     if(done(g)){
-      const t=modalThird(g), sj=_jong(TN(t))?'이':'가';
+      const pm=pivotalPlayed(g), res=pm?resultHTML(pm):'';
       if(prob(g)>=50) cards.push({g, sortk:9e15, cls:'btile good',
-        body:'<div class="cond condgood">'+tt('✅ '+(FLAGS[t]||'')+' '+TN(t)+' finished behind Korea','✅ '+(FLAGS[t]||'')+' '+TN(t)+sj+' 한국에 뒤짐')+'</div><div class="bstat">'+tt('Satisfied','충족')+'</div>'});
+        body:'<div class="cond condgood">✅ '+res+'</div><div class="bstat">'+tt('Satisfied','충족')+'</div>'});
       else cards.push({g, sortk:9.5e15, cls:'btile bad',
-        body:'<div class="cond">'+tt('✕ '+(FLAGS[t]||'')+' '+TN(t)+' finished ahead of Korea','✕ '+(FLAGS[t]||'')+' '+TN(t)+sj+' 한국을 앞섬')+'</div><div class="bstat">'+tt('Not satisfied','불충족')+'</div>'});
+        body:'<div class="cond">✕ '+res+'</div><div class="bstat">'+tt('Not satisfied','불충족')+'</div>'});
       return;
     }
     const e=enumGroup(g); if(!e) return;
