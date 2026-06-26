@@ -69,8 +69,9 @@
   .resinline>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px;
     padding:12px 2px 2px;font-weight:800;font-size:14px;color:var(--txt)}
   .resinline>summary::-webkit-details-marker{display:none}
-  .resinline>summary::after{content:"+";color:var(--mut2);font-size:18px}
-  .resinline[open]>summary::after{content:"–"}
+  .resinline>summary>.rsum{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .resinline>summary::after{content:"›";display:inline-block;color:var(--mut2);font-size:20px;font-weight:700;flex:none;transition:transform .2s ease}
+  .resinline[open]>summary::after{transform:rotate(90deg)}
   .resinline .body{padding:2px 2px 6px;color:var(--mut);font-size:13.5px}
   .resinline .body p{margin:6px 0 0}
   .controls label{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut2);display:block;margin-bottom:6px}
@@ -146,8 +147,8 @@
   details.box{margin-top:18px;border:1px solid var(--line);border-radius:var(--radius);background:var(--card);overflow:hidden}
   details.box>summary{cursor:pointer;padding:16px 20px;font-weight:800;font-size:15px;list-style:none;display:flex;justify-content:space-between;align-items:center}
   details.box>summary::-webkit-details-marker{display:none}
-  details.box>summary::after{content:"+";color:var(--mut2);font-size:20px}
-  details.box[open]>summary::after{content:"–"}
+  details.box>summary::after{content:"›";display:inline-block;color:var(--mut2);font-size:22px;font-weight:700;transition:transform .2s ease}
+  details.box[open]>summary::after{transform:rotate(90deg)}
   details.box .body{padding:4px 20px 20px;color:var(--mut);font-size:14px}
   details.box .body h4{color:var(--txt);margin:16px 0 6px;font-size:14.5px}
   details.box .body ul{margin:6px 0;padding-left:20px}
@@ -287,9 +288,13 @@
   /* WHAT-NEEDS-TO-HAPPEN BINGO BOARD */
   .boardhead{font-size:14px;color:var(--mut);margin:0 0 14px;line-height:1.65}
   .boardhead b{color:var(--txt)} .boardhead .need{color:var(--acc);font-weight:900}
+  .boardhead .miss{color:var(--acc)} .boardhead .miss b{color:var(--acc)}
   .bingo{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:12px}
   .btile{border:1px dashed var(--line);border-radius:11px;padding:13px 14px;background:transparent}   /* pending = dashed, no fill */
   .btile.good{border-style:solid;border-color:transparent;box-shadow:inset 0 0 0 1px rgba(63,208,122,.5);background:rgba(63,208,122,.08)}   /* satisfied/secured = GREEN */
+  .btile.bad{border-style:solid;border-color:transparent;box-shadow:inset 0 0 0 1px rgba(255,70,85,.42);background:rgba(255,70,85,.06)}   /* not satisfied = RED */
+  .btile.bad .cond{color:var(--acc);font-weight:700}
+  .btile.bad .bstat{color:var(--acc);font-weight:700}
   .btile.dead{border-style:solid;opacity:.5}
   .btile .bh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:7px}
   .btile .bg{font-weight:800;font-size:14px}
@@ -338,7 +343,7 @@
       </div>
     </div>
     <details class="resinline" id="resultsBox">
-      <summary><span data-i18n="resSummPre">✅ Real results baked in</span> — <span id="resultsSummary">live group-stage results</span></summary>
+      <summary><span class="rsum"><span data-i18n="resSummPre">✅ Real results baked in</span> · <span id="resultsSummary">live group-stage results</span></span></summary>
       <div class="body">
         <p data-i18n="resBody">These completed matches are <b>played</b> in every simulation; only the remaining fixtures are simulated. Source:
           <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a>.
@@ -422,31 +427,28 @@
   <details class="box">
     <summary data-i18n="methSummary">How this works — methodology &amp; assumptions</summary>
     <div class="body" data-i18n="methBody">
-      <p>This is a <b>Monte Carlo simulation</b>. Each "run" plays out the entire 48-team group stage thousands of times, then resolves the Round-of-32 bracket. <b>Match 74 (Boston) is one game between two teams</b> — Seat A (the Group E winner) vs Seat B (a wildcard 3rd-place team) — so we track each seat's race separately, plus how often each exact A-vs-B tie occurs.</p>
-      <h4>The Boston match (real bracket)</h4>
+      <p>This is a <b>Monte Carlo simulation</b>. Each "run" plays out the entire 48-team group stage thousands of times, then resolves the Round-of-32 bracket — focused on <b>South Korea's path</b>: its chance to reach the Round of 32, and who it would most likely face.</p>
+      <h4>Reaching the Round of 32</h4>
       <ul>
-        <li>Match 74 at Gillette Stadium = <code>Winner Group E</code> vs <code>Best 3rd place from A/B/C/D/F</code>.</li>
-        <li>32 teams reach the Round of 32: 12 group winners + 12 runners-up + the <b>8 best third-placed</b> teams.</li>
-        <li>Third-placed teams are slotted to winners by FIFA's official combination table. Boston's winner-of-E slot can only meet a third-placed side from Groups A, B, C, D or F.</li>
+        <li>32 teams advance: 12 group winners + 12 runners-up + the <b>8 best third-placed</b> teams (of 12).</li>
+        <li>Third-placed teams are ranked by <b>points → goal difference → goals scored</b>; the top 8 qualify (head-to-head / fair-play tiebreakers simplified).</li>
+        <li>The Round-of-32 pairings then follow FIFA's official bracket, which decides who each group winner meets — used here to project Korea's likely opponent.</li>
       </ul>
       <h4>Match model</h4>
       <ul>
-        <li>Each team has a strength rating (default = approximate <b>FIFA World Ranking points, June 2026</b>). All ratings are editable above.</li>
-        <li>For each game, the rating gap sets an expected goal supremacy; each side's goals are drawn from a Poisson distribution, so scorelines (and goal difference) are realistic.</li>
-        <li>Group ranking uses points → goal difference → goals scored (head-to-head/fair-play tiebreakers simplified). The 8 best thirds are ranked the same way.</li>
-        <li>Qualifying thirds are matched to winner slots by a valid assignment respecting the official eligibility sets; when several assignments are valid the choice is randomised, so no single group is artificially favoured.</li>
+        <li>Each team has a strength rating (default ≈ <b>FIFA World Ranking points, June 2026</b>), editable above.</li>
+        <li>For each game the rating gap sets an expected goal supremacy; each side's goals are drawn from a Poisson distribution, so scorelines and goal difference are realistic.</li>
       </ul>
       <h4>Real results (live)</h4>
       <ul>
-        <li>Completed group-stage matches are <b>played</b> to their actual scorelines; only the remaining fixtures are simulated. Finished results come from <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a> and are listed in the “Real results baked in” panel.</li>
-        <li><b>Live, in‑play scores</b> are layered on top from ESPN's public scoreboard. A match being played right now keeps its current score and only the <i>remaining</i> minutes are simulated, so every probability — Korea's R32 odds, the third‑place race and the “what needs to happen” board — moves with the live action. It auto‑refreshes every minute.</li>
-        <li>“↻ Refresh from live data” pulls the latest finished + in‑play scores in your browser. Untick “Lock in real results” to see the pre-tournament forecast instead.</li>
-        <li>Ratings stay at their pre-tournament value for the matches still to be played — a real 7–1 already reshapes goal difference and the third-place race without us second-guessing each team's form.</li>
+        <li>Completed group-stage matches are <b>played</b> to their actual scorelines; only the remaining fixtures are simulated. Finished results come from <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a>.</li>
+        <li><b>Live, in‑play scores</b> are layered on top from ESPN's public scoreboard: a match in progress keeps its current score and only the <i>remaining</i> minutes are simulated, so every probability moves with the live action. Auto‑refreshes every minute.</li>
+        <li>Ratings stay at their pre-tournament value for matches still to be played — a real 7–1 already reshapes goal difference and the third-place race on its own.</li>
       </ul>
       <h4>Honest caveats</h4>
       <ul>
-        <li>It's a model for fun and insight, <b>not a betting tool</b>. Ratings are approximate and the exact 495-row FIFA third-place table is approximated by a valid randomised matching.</li>
-        <li>You can still nudge any rating (e.g. after watching a team play) and re-run to see the picture shift.</li>
+        <li>It's a model for fun and insight, <b>not a betting tool</b>. Ratings are approximate and the exact FIFA third-place combination table is approximated by a valid randomised matching.</li>
+        <li>You can nudge any rating (e.g. after watching a team play) and re-run to see the picture shift.</li>
       </ul>
     </div>
   </details>
@@ -461,9 +463,8 @@
 
   <footer>
     <div>
-      <span class="pill" data-i18n="pillGroupE">Group E: Germany · Ecuador · Ivory Coast · Curaçao</span>
-      <span class="pill" data-i18n="pillMatch74">Match 74 · 29 Jun 2026 · 4:30pm ET</span>
-      <span class="pill" data-i18n="pillVenue">Boston / Gillette Stadium</span>
+      <span class="pill" data-i18n="pillGroupA">Group A: Mexico · South Africa · South Korea · Czechia</span>
+      <span class="pill" data-i18n="pillThirds">8 of 12 third-placed teams advance</span>
     </div>
     <p style="margin-top:14px" data-i18n="footNote">Built as an interactive World Cup 2026 explainer. Bracket &amp; schedule per FIFA's official Round-of-32 format;
     strengths based on FIFA World Ranking (June 2026). Simulation runs entirely in your browser — nothing is sent anywhere.</p>
@@ -581,29 +582,25 @@ const KO_UI = {
   secKoRoad:'🇰🇷 대한민국의 32강 여정', chanceReach:'32강 진출 확률',
   secThirdRace:'3위 경쟁 — 12팀 중 8팀 진출', secBoard:'🎯 무슨 일이 일어나야 할까',
   methSummary:'작동 방식 — 방법론과 가정',
-  methBody:'<p>이것은 <b>몬테카를로 시뮬레이션</b>입니다. 매 "실행"마다 48개 팀 조별리그 전체를 수천 번 치른 뒤 32강 대진을 확정합니다. <b>74경기(보스턴)는 두 팀의 단일 경기</b>입니다 — A석(E조 1위) 대 B석(와일드카드 3위) — 그래서 각 자리의 경쟁을 따로 추적하고, 정확한 A 대 B 대결이 얼마나 자주 나오는지도 셉니다.</p>'+
-    '<h4>보스턴 경기 (실제 대진)</h4><ul>'+
-    '<li>질레트 스타디움 74경기 = <code>E조 1위</code> 대 <code>A/B/C/D/F조 최상위 3위</code>.</li>'+
-    '<li>32강에는 32팀 진출: 조 1위 12팀 + 2위 12팀 + <b>최상위 3위 8팀</b>.</li>'+
-    '<li>3위 팀은 FIFA 공식 조합표에 따라 1위 자리에 배정됩니다. 보스턴의 ‘E조 1위’ 자리는 A·B·C·D·F조 3위만 만날 수 있습니다.</li></ul>'+
+  methBody:'<p>이것은 <b>몬테카를로 시뮬레이션</b>입니다. 매 "실행"마다 48개 팀 조별리그 전체를 수천 번 치른 뒤 32강 대진을 확정합니다 — <b>대한민국의 여정</b>에 초점을 둡니다: 32강 진출 확률과 가장 유력한 상대.</p>'+
+    '<h4>32강 진출</h4><ul>'+
+    '<li>32팀 진출: 조 1위 12팀 + 2위 12팀 + <b>최상위 3위 8팀</b>(12개 중).</li>'+
+    '<li>3위 팀은 <b>승점 → 골득실 → 득점</b> 순으로 정렬해 상위 8팀이 진출합니다(상대전적/페어플레이는 단순화).</li>'+
+    '<li>32강 대진은 FIFA 공식 브래킷을 따르며, 각 조 1위가 누구를 만나는지 결정됩니다 — 한국의 유력 상대를 예측하는 데 사용합니다.</li></ul>'+
     '<h4>경기 모델</h4><ul>'+
     '<li>각 팀은 전력 레이팅을 가집니다(기본값 ≈ <b>FIFA 랭킹 포인트, 2026년 6월</b>). 위에서 모두 수정할 수 있습니다.</li>'+
-    '<li>경기마다 레이팅 차이가 기대 득점 우위를 정하고, 각 팀의 득점은 푸아송 분포에서 추출되어 스코어와 골득실이 현실적입니다.</li>'+
-    '<li>조 순위는 승점 → 골득실 → 득점 순(상대전적/페어플레이는 단순화). 최상위 3위 8팀도 같은 방식으로 정렬됩니다.</li>'+
-    '<li>진출한 3위 팀은 공식 자격 조합을 지키는 유효한 배정으로 1위 자리에 매칭되고, 유효한 배정이 여럿이면 무작위로 골라 특정 조가 인위적으로 유리해지지 않습니다.</li></ul>'+
+    '<li>경기마다 레이팅 차이가 기대 득점 우위를 정하고, 각 팀의 득점은 푸아송 분포에서 추출되어 스코어와 골득실이 현실적입니다.</li></ul>'+
     '<h4>실제 결과 (라이브)</h4><ul>'+
     '<li>완료된 조별리그 경기는 실제 스코어로 <b>반영</b>되고 남은 경기만 시뮬레이션합니다. 완료 결과는 <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a>에서 가져옵니다.</li>'+
     '<li><b>라이브 진행 스코어</b>는 ESPN 공개 스코어보드에서 위에 덧입혀집니다. 진행 중인 경기는 현재 스코어를 유지하고 <i>남은</i> 시간만 시뮬레이션하므로 모든 확률이 경기 흐름에 따라 움직입니다. 1분마다 자동 새로고침됩니다.</li>'+
-    '<li>"↻ 라이브 데이터 새로고침"은 브라우저에서 최신 완료·진행 스코어를 불러옵니다.</li>'+
     '<li>아직 치르지 않은 경기는 대회 전 레이팅 값을 유지합니다.</li></ul>'+
     '<h4>솔직한 한계</h4><ul>'+
-    '<li>재미와 통찰을 위한 모델이며 <b>베팅 도구가 아닙니다</b>. 레이팅은 근사값이고, 495행짜리 FIFA 3위 조합표는 유효한 무작위 매칭으로 근사합니다.</li>'+
+    '<li>재미와 통찰을 위한 모델이며 <b>베팅 도구가 아닙니다</b>. 레이팅은 근사값이고, FIFA 3위 조합표는 유효한 무작위 매칭으로 근사합니다.</li>'+
     '<li>팀 경기를 본 뒤 레이팅을 조정해 다시 실행하며 그림이 어떻게 바뀌는지 볼 수 있습니다.</li></ul>',
   ratingsSummary:'48개 팀 레이팅 전체 수정 (고급)',
   ratingsIntro:'레이팅을 조정하고 <b>시뮬레이션 실행</b>을 다시 누르세요. 높을수록 강함.',
-  pillGroupE:'E조: 독일 · 에콰도르 · 코트디부아르 · 쿠라소',
-  pillMatch74:'74경기 · 2026년 6월 29일 · ET 오후 4:30',
-  pillVenue:'보스턴 / 질레트 스타디움',
+  pillGroupA:'A조: 멕시코 · 남아공 · 대한민국 · 체코',
+  pillThirds:'3위 12팀 중 8팀 진출',
   footNote:'월드컵 2026 인터랙티브 해설로 제작. 대진·일정은 FIFA 공식 32강 형식 기준, 전력은 FIFA 랭킹(2026년 6월) 기반. 시뮬레이션은 전적으로 브라우저에서 실행되며 어디에도 전송되지 않습니다.'
 };
 // Apply static-text language: Korean from KO_UI, English from the original markup (captured once).
@@ -990,24 +987,27 @@ function renderBoard(){
     ? tt('<b>Every group is done.</b>','<b>모든 조가 끝났습니다.</b>')
     : needed===0
     ? tt('✅ <b>Korea is through</b> — enough groups already went their way.','✅ <b>한국 진출 확정</b> — 충분한 조가 이미 한국에 유리하게 끝났습니다.')
-    : tt('Korea needs <span class="need">'+needed+' of the '+remaining.length+'</span> groups still in play to go their way · ✅ <b>'+banked.length+'</b> already satisfied.',
-         '한국은 남은 <span class="need">'+remaining.length+'개 조 중 '+needed+'개</span>가 유리하게 끝나야 합니다 · ✅ <b>'+banked.length+'</b>개 이미 충족.');
+    : tt('Korea needs <span class="need">'+needed+' of the '+remaining.length+'</span> groups still in play to go their way · ✅ <b>'+banked.length+'</b> satisfied'+(settledAbove?' · <span class="miss">✕ <b>'+settledAbove+'</b> missed</span>':'')+'.',
+         '한국은 남은 <span class="need">'+remaining.length+'개 조 중 '+needed+'개</span>가 유리하게 끝나야 합니다 · ✅ <b>'+banked.length+'</b>개 충족'+(settledAbove?' · <span class="miss">✕ <b>'+settledAbove+'</b>개 불충족</span>':'')+'.');
 
-  // Build ONE consistent grid of blocks. Cards in play show what's needed; ✅ blocks are
-  // events already satisfied (a group that finished with a 3rd-placer weaker than Korea, or
-  // one mathematically locked that way). Groups that went against Korea are dropped (noise).
+  // One consistent grid: pending cards (what's needed) first, then ✅ satisfied/secured (green),
+  // then ✕ not-satisfied (red) — groups that finished with a 3rd-placer ABOVE Korea, or that
+  // can no longer help.
   const cards=[];
   NONA.forEach(g=>{
     if(done(g)){
-      if(prob(g)>=50){ const t=modalThird(g);
-        cards.push({g, sortk:9e15, cls:'btile good',
-          body:'<div class="cond condgood">✅ '+(FLAGS[t]||'')+' '+TN(t)+tt(' finished below Korea',(_jong(TN(t))?'이':'가')+' 한국보다 아래로 마감')+'</div><div class="bstat">'+tt('Satisfied','충족')+'</div>'}); }
-      return;   // group decided against Korea -> drop
+      const t=modalThird(g);
+      if(prob(g)>=50) cards.push({g, sortk:9e15, cls:'btile good',
+        body:'<div class="cond condgood">✅ '+(FLAGS[t]||'')+' '+TN(t)+tt(' finished below Korea',(_jong(TN(t))?'이':'가')+' 한국보다 아래로 마감')+'</div><div class="bstat">'+tt('Satisfied','충족')+'</div>'});
+      else cards.push({g, sortk:9.5e15, cls:'btile bad',
+        body:'<div class="cond">✕ '+(FLAGS[t]||'')+' '+TN(t)+tt(' finished above Korea',(_jong(TN(t))?'이':'가')+' 한국보다 위로 마감')+'</div><div class="bstat">'+tt('Not satisfied','불충족')+'</div>'});
+      return;
     }
     const e=enumGroup(g); if(!e) return;
     if(e.fav>=99.5){ cards.push({g, sortk:9e15, cls:'btile good',
       body:'<div class="cond condgood">'+tt('✅ Secured — going Korea’s way','✅ 확정 — 한국에 유리')+'</div>'}); return; }
-    if(e.fav<=0.5) return;   // mathematically out -> drop
+    if(e.fav<=0.5){ cards.push({g, sortk:9.4e15, cls:'btile bad',
+      body:'<div class="cond">'+tt('✕ Can no longer help Korea','✕ 더 이상 한국에 도움 안 됨')+'</div><div class="bstat">'+tt('Not satisfied','불충족')+'</div>'}); return; }
     const d=e.decisive, m=d.m, cond=condHTML(m.a,m.b,d.hA,d.hD,d.hB);
     let stat, sortk;
     if(m.live){ sortk=-1; stat='<span class="live">🔴 LIVE</span> '+(FLAGS[m.a]||'')+' '+m.ox+'–'+m.oy+' '+(FLAGS[m.b]||'')+(m.clock?" · "+m.clock+"'":''); }
