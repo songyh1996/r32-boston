@@ -294,10 +294,6 @@
   .btile .bstat .live,.bingo .live{display:inline-block;color:#fff;background:var(--acc);font-size:10px;font-weight:800;letter-spacing:.04em;
     padding:1px 8px;border-radius:99px;animation:pulse 1.4s ease-in-out infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
-  .banked{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:15px}
-  .banked .blab{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut2);font-weight:800;margin-right:4px}
-  .bchip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;padding:3px 9px;border-radius:99px;border:1px solid var(--line);color:var(--mut2)}
-  .bchip.y{color:#ff8087;border-color:rgba(255,70,85,.3);background:rgba(255,70,85,.06)}
 
   footer{margin-top:40px;color:var(--mut2);font-size:12.5px;text-align:center;line-height:1.7}
   footer a{color:var(--mut)}
@@ -451,8 +447,6 @@
     <div class="panel" style="padding:18px 20px">
       <div class="boardhead" id="boardHead"></div>
       <div class="bingo" id="bingo"></div>
-      <div class="banked" id="boardBanked"></div>
-      <p class="seatfoot" id="boardFoot">Each <b>dashed</b> card is what Korea still needs from that group's <b>decisive match</b> — <b>nothing is decided until it's played</b> (“seals it” = would guarantee it; “not a lock” = necessary but a freak result elsewhere could still spoil it). A card only turns <span style="color:var(--acc)">solid red</span> once it's mathematically <b>secured</b> ✅; a faded card is mathematically <b>out</b> ✕. <span style="color:var(--acc)">🔴 LIVE</span> shows the in‑play score and updates the odds (auto‑refreshes every minute).</p>
     </div>
   </div><!-- /tabThird -->
 
@@ -989,53 +983,41 @@ function renderBoard(){
   const totalNeed=banked.length+needed;   // groups that must end with a 3rd weaker than Korea (always 4)
 
   document.getElementById('boardHead').innerHTML = remaining.length===0
-    ? 'Every group is done — see Korea’s verdict in the headline above.'
+    ? '<b>Every group is done.</b>'
     : needed===0
-    ? 'Korea finished 3rd, but enough groups have already gone their way — <b>they’re through.</b> Nothing below can change it.'
-    : 'Korea finished 3rd, so it’s out of their hands. <b>'+totalNeed+'</b> groups need to finish with a third‑placer <b>weaker than Korea</b> — '+
-      '<b>'+banked.length+'</b> already '+(banked.length===1?'has':'have')+' ✅, so Korea still needs <span class="need">'+needed+' of the '+remaining.length+'</span> undecided groups below. '+
-      'Nothing here is settled until each match is played.';
+    ? '✅ <b>Korea is through</b> — enough groups already went their way.'
+    : 'Korea needs <span class="need">'+needed+' of the '+remaining.length+'</span> groups still in play to go their way · ✅ <b>'+banked.length+'</b> already banked.';
 
-  host.innerHTML='';
-  // Classify each undecided group; the ONLY highlighted card is one already mathematically
-  // secured (✅) — predictions never colour a card. Order: secured → live → by kickoff → dead.
-  remaining.map(g=>{
-    const e=enumGroup(g); let kind='pending', sortk=8e15;
-    if(e){ if(e.fav>=99.5){kind='secured';sortk=-2;} else if(e.fav<=0.5){kind='dead';sortk=9e15;}
-      else if(e.decisive.m.live){kind='live';sortk=-1;}
-      else { const ms=kickoffMs(e.decisive.m.date,e.decisive.m.time); sortk=isFinite(ms)?ms:7e15; } }
-    return {g,e,kind,sortk};
-  }).sort((a,b)=>a.sortk-b.sortk).forEach(o=>{
-    const g=o.g, e=o.e;
-    const tile=document.createElement('div');
-    let body, cls='btile';
-    if(!e){ body='<div class="cond">resolving…</div>'; }
-    else if(o.kind==='secured'){ cls='btile good'; body='<div class="cond condgood">✅ Secured — this group is going Korea’s way</div>'; }
-    else if(o.kind==='dead'){ cls='btile dead'; body='<div class="cond condbad">✕ This group can no longer help Korea</div>'; }
-    else {
-      const d=e.decisive, m=d.m, cond=condHTML(m.a,m.b,d.hA,d.hD,d.hB);
-      let stat;
-      if(m.live){ stat='<span class="live">🔴 LIVE</span> '+(FLAGS[m.a]||'')+' '+m.ox+'–'+m.oy+' '+(FLAGS[m.b]||'')+(m.clock?" · "+m.clock+"'":''); }
-      else { const ms=kickoffMs(m.date,m.time);
-        if(isFinite(ms)){ if(now<ms) stat='⏰ not played yet · '+fmtKick(ms); else if(now<ms+150*60000) stat='<span class="live">🔴 LIVE</span> · awaiting score'; else stat='awaiting result'; }
-        else stat='not played yet'+(m.time?' · '+m.time:''); }
-      body='<div class="cond">'+cond+'</div><div class="bstat">'+stat+'</div>';
+  // Build ONE consistent grid of blocks. Cards in play show what's needed; ✅ blocks are
+  // events already satisfied (a group that finished with a 3rd-placer weaker than Korea, or
+  // one mathematically locked that way). Groups that went against Korea are dropped (noise).
+  const cards=[];
+  NONA.forEach(g=>{
+    if(done(g)){
+      if(prob(g)>=50){ const t=modalThird(g);
+        cards.push({g, sortk:9e15, cls:'btile good',
+          body:'<div class="cond condgood">✅ '+(FLAGS[t]||'')+' '+t+' finished below Korea</div><div class="bstat">banked</div>'}); }
+      return;   // group decided against Korea -> drop
     }
-    tile.className=cls;
-    tile.innerHTML='<div class="bh"><div class="bg">Group '+g+'</div></div>'+body;
-    host.appendChild(tile);
+    const e=enumGroup(g); if(!e) return;
+    if(e.fav>=99.5){ cards.push({g, sortk:9e15, cls:'btile good',
+      body:'<div class="cond condgood">✅ Secured — going Korea’s way</div>'}); return; }
+    if(e.fav<=0.5) return;   // mathematically out -> drop
+    const d=e.decisive, m=d.m, cond=condHTML(m.a,m.b,d.hA,d.hD,d.hB);
+    let stat, sortk;
+    if(m.live){ sortk=-1; stat='<span class="live">🔴 LIVE</span> '+(FLAGS[m.a]||'')+' '+m.ox+'–'+m.oy+' '+(FLAGS[m.b]||'')+(m.clock?" · "+m.clock+"'":''); }
+    else { const ms=kickoffMs(m.date,m.time); sortk=isFinite(ms)?ms:7e15;
+      if(isFinite(ms)){ if(now<ms) stat='⏰ not played yet · '+fmtKick(ms); else if(now<ms+150*60000) stat='<span class="live">🔴 LIVE</span> · awaiting score'; else stat='awaiting result'; }
+      else stat='not played yet'+(m.time?' · '+m.time:''); }
+    cards.push({g, sortk, cls:'btile', body:'<div class="cond">'+cond+'</div><div class="bstat">'+stat+'</div>'});
   });
 
-  const bk=document.getElementById('boardBanked'); bk.innerHTML='';
-  const settled=NONA.filter(g=>done(g));
-  if(settled.length){
-    bk.innerHTML='<span class="blab">Decided</span>';
-    settled.map(g=>({g,fav:prob(g)>=50,team:modalThird(g)})).sort((a,b)=>(b.fav?1:0)-(a.fav?1:0)).forEach(o=>{
-      const c=document.createElement('span'); c.className='bchip '+(o.fav?'y':'n');
-      c.innerHTML=(o.fav?'✅':'✕')+' '+(FLAGS[o.team]||'')+' '+o.team+' ('+o.g+')';
-      bk.appendChild(c);
-    });
-  }
+  host.innerHTML='';
+  cards.sort((a,b)=>a.sortk-b.sortk).forEach(o=>{
+    const tile=document.createElement('div'); tile.className=o.cls;
+    tile.innerHTML='<div class="bh"><div class="bg">Group '+o.g+'</div></div>'+o.body;
+    host.appendChild(tile);
+  });
 }
 
 /* ------------------- THIRD-PLACE RACE (Korea ticket) ----------- */
@@ -1259,13 +1241,21 @@ async function fetchLiveScores(){
         const b=espnTeam((away.team||{}).displayName||(away.team||{}).name||(away.team||{}).location);
         if(!a||!b||a===b) return; const g=GROUP_OF[a]; if(!g||GROUP_OF[b]!==g) return;   // group-stage pair only
         const ga=parseInt(home.score,10), gb=parseInt(away.score,10);
-        const state=(((comp.status||{}).type||{}).state)||'';
-        if(state==='post'){ fin.push([g,a,b,isFinite(ga)?ga:0,isFinite(gb)?gb:0]); seen++; }
-        else if(state==='in'){
-          const dc=''+((comp.status||{}).displayClock||((comp.status||{}).type||{}).shortDetail||'');
-          const mm=dc.match(/(\d{1,3})/); const mn=mm?Math.min(95,+mm[1]):45;
+        const stt=(comp.status||{}).type||{}, state=stt.state||'';
+        if(state==='post'){
+          if(isFinite(ga)&&isFinite(gb)){ fin.push([g,a,b,ga,gb]); seen++; }   // skip if score missing -> keep baseline
+        } else if(state==='in'){
+          // Prefer the running clock ("67'"); fall back to half NAMES, never their ordinal digit
+          // (so "2nd Half" -> ~70, not 2).
+          let mn; const cm=(''+((comp.status||{}).displayClock||'')).match(/(\d{1,3})/);
+          if(cm) mn=Math.min(95,+cm[1]);
+          else { const sd=(''+(stt.shortDetail||stt.description||'')).toLowerCase();
+            mn=/half ?time|\bht\b/.test(sd)?45:/2nd|second/.test(sd)?70:/1st|first/.test(sd)?25:45; }
+          const gx=isFinite(ga)?ga:0, gy=isFinite(gb)?gb:0;
           const ex=(live[g]=live[g]||[]);
-          if(!ex.some(m=>(m[0]===a&&m[1]===b)||(m[0]===b&&m[1]===a))){ ex.push([a,b,isFinite(ga)?ga:0,isFinite(gb)?gb:0,mn]); seen++; }
+          const ix=ex.findIndex(m=>(m[0]===a&&m[1]===b)||(m[0]===b&&m[1]===a));
+          if(ix<0){ ex.push([a,b,gx,gy,mn]); seen++; }
+          else if(mn>=ex[ix][4]) ex[ix]=[a,b,gx,gy,mn];   // newer snapshot wins across adjacent dates
         }
       });
     }catch(e){ /* skip this date */ }
@@ -1273,11 +1263,14 @@ async function fetchLiveScores(){
   if(!seen) return false;
   const pairIn=(arr,a,b)=>(arr||[]).some(m=>(m[0]===a&&m[1]===b)||(m[0]===b&&m[1]===a));
   const dropPair=(arr,a,b)=>{ if(arr) for(let i=arr.length-1;i>=0;i--){const m=arr[i]; if((m[0]===a&&m[1]===b)||(m[0]===b&&m[1]===a)) arr.splice(i,1);} };
-  fin.forEach(([g,a,b,x,y])=>{ dropPair(FIXTURES[g],a,b); dropPair(PLAYED[g],a,b); (PLAYED[g]=PLAYED[g]||[]).push([a,b,x,y]); });
+  // Finished -> PLAYED (replace any prior copy). We deliberately do NOT mutate FIXTURES:
+  // precedence is resolved at read time (PLAYED > LIVE > FIXTURES via enumGroup/simGroup),
+  // so a match ESPN stops reporting is never lost — it just reverts to its scheduled fixture.
+  fin.forEach(([g,a,b,x,y])=>{ dropPair(PLAYED[g],a,b); (PLAYED[g]=PLAYED[g]||[]).push([a,b,x,y]); });
   LIVE={};
   for(const g in live){
     const arr=live[g].filter(m=>!pairIn(PLAYED[g],m[0],m[1]));   // a finished match isn't still live
-    if(arr.length){ LIVE[g]=arr; arr.forEach(m=>dropPair(FIXTURES[g],m[0],m[1])); }   // …and isn't "to play"
+    if(arr.length) LIVE[g]=arr;
   }
   renderResultsPanel();
   run();
