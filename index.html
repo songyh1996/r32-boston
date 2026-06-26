@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Road to Boston — Who plays the World Cup 2026 Round of 32 at Gillette Stadium?</title>
-<meta name="description" content="Interactive Monte Carlo simulation ranking which national teams are most likely to play in the FIFA World Cup 2026 Round of 32 match in Boston (Match 74, Gillette Stadium)." />
+<title>Korea's Road to R32 — FIFA World Cup 2026</title>
+<meta name="description" content="Live Monte Carlo odds for South Korea to reach the FIFA World Cup 2026 Round of 32, plus the full R32 bracket picture — updated with live group-stage results." />
 <style>
   :root{
     --bg:#0a0e1a; --bg2:#0f1628; --card:#141d33; --card2:#1a2540;
@@ -52,8 +52,18 @@
 
   /* CONTROLS */
   .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
-  .controls{margin:26px 0 8px;padding:18px 20px;display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+  .controls{margin:26px 0 8px;padding:18px 20px;display:flex;flex-direction:column;gap:6px}
+  .ctop{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
   .controls .grow{flex:1 1 260px}
+  /* inline "real results" disclosure, merged into the controls box */
+  .resinline{border-top:1px solid var(--line);margin-top:8px}
+  .resinline>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:12px 2px 2px;font-weight:800;font-size:14px;color:var(--txt)}
+  .resinline>summary::-webkit-details-marker{display:none}
+  .resinline>summary::after{content:"+";color:var(--mut2);font-size:18px}
+  .resinline[open]>summary::after{content:"–"}
+  .resinline .body{padding:2px 2px 6px;color:var(--mut);font-size:13.5px}
+  .resinline .body p{margin:6px 0 0}
   .controls label{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut2);display:block;margin-bottom:6px}
   .controls input[type=range]{width:100%;accent-color:var(--acc)}
   .runbtn{background:linear-gradient(90deg,var(--acc),#2bb6a9);color:#042421;border:0;font-weight:800;
@@ -263,29 +273,30 @@
 <div class="wrap">
 
   <header class="hero">
-    <div class="badge">FIFA World Cup 2026 · Round of 32 · Match 74</div>
-    <h1>Road to <span class="b">Boston</span></h1>
-    <p class="sub">Gillette Stadium, Foxborough MA · Mon June 29, 2026 · 4:30 PM ET<br>
-      Which country is most likely to play here? Ranked by probability — <b>updated with live group-stage results</b>.</p>
+    <div class="badge">FIFA World Cup 2026 · Road to the Round of 32</div>
+    <h1>Korea's Road to <span class="b">R32</span></h1>
+    <p class="sub">Live odds for South Korea to reach the Round of 32 — plus the full R32 bracket picture.<br>
+      <b>Updated with live group-stage results.</b></p>
   </header>
 
   <div class="panel controls">
-    <button class="runbtn" id="liveBtn">↻ Refresh from live data</button>
-    <div class="grow">
-      <div class="progwrap"><div class="progbar" id="prog"></div></div>
-      <div class="status" id="status">50,000 simulations · live results locked.</div>
+    <div class="ctop">
+      <button class="runbtn" id="liveBtn">↻ Refresh from live data</button>
+      <div class="grow">
+        <div class="progwrap"><div class="progbar" id="prog"></div></div>
+        <div class="status" id="status">50,000 simulations · live results locked.</div>
+      </div>
     </div>
+    <details class="resinline" id="resultsBox">
+      <summary>✅ Real results baked in — <span id="resultsSummary">live group-stage results</span></summary>
+      <div class="body">
+        <p>These completed matches are <b>locked</b> in every simulation; only the remaining fixtures are simulated. Source:
+          <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a>.
+          Hit <b>Refresh from live data</b> to pull the latest scores.</p>
+        <div class="resgrid" id="resGrid"></div>
+      </div>
+    </details>
   </div>
-
-  <details class="box" id="resultsBox">
-    <summary>✅ Real results baked in — <span id="resultsSummary">live group-stage results</span></summary>
-    <div class="body">
-      <p>These completed matches are <b>locked</b> in every simulation; only the remaining fixtures are simulated. Source:
-        <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a>.
-        Hit <b>Refresh from live data</b> to pull the latest scores.</p>
-      <div class="resgrid" id="resGrid"></div>
-    </div>
-  </details>
 
   <div class="tabbar">
     <button class="tabbtn active" id="tabBtnThird" data-tab="Third">🇰🇷 Will Korea make it to R32?</button>

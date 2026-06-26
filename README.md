@@ -1,8 +1,9 @@
-# 🏟️ Road to Boston — World Cup 2026 Round of 32
+# 🇰🇷 Korea's Road to R32 — World Cup 2026
 
-An interactive, in-browser **Monte Carlo simulation** that ranks which national teams are
-most likely to play in the **FIFA World Cup 2026 Round-of-32 match in Boston**
-(Gillette Stadium, Foxborough — **Match 74, Mon June 29, 2026, 4:30 PM ET**).
+An interactive, in-browser **Monte Carlo simulation** of the **FIFA World Cup 2026**
+group stage and Round-of-32 bracket. The headline view is **South Korea's live odds to
+reach the Round of 32**; two more tabs cover any team's likely R32 opponent and the
+**Boston** Round-of-32 match (Gillette Stadium — Match 74). Updated with live results.
 
 > **The Boston match has two tickets.** One always goes to the **winner of Group E**
 > (Germany, Ecuador, Ivory Coast or Curaçao). The other goes to one of the **best
