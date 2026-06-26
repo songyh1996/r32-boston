@@ -14,6 +14,7 @@
     --line:#26282b; --txt:#ffffff; --mut:#9c9c9d; --mut2:#6a6b6c;
     --acc:#ff4655;          /* Red Devils red — primary accent */
     --acc2:#ff8a3c;         /* warm ember — gradient highlight */
+    --ok:#3fd07a;           /* success green — a satisfied/secured condition */
     --win:#ff4655;          /* group-E-winner route (red) */
     --third:#ff9d5c;        /* wildcard 3rd-place route (amber) */
     --red:#ff6363;
@@ -288,16 +289,17 @@
   .boardhead b{color:var(--txt)} .boardhead .need{color:var(--acc);font-weight:900}
   .bingo{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:12px}
   .btile{border:1px dashed var(--line);border-radius:11px;padding:13px 14px;background:transparent}   /* pending = dashed, no fill */
-  .btile.good{border-style:solid;box-shadow:inset 0 0 0 1px rgba(255,70,85,.45);background:rgba(255,70,85,.05)}   /* only a SECURED group is highlighted */
+  .btile.good{border-style:solid;border-color:transparent;box-shadow:inset 0 0 0 1px rgba(63,208,122,.5);background:rgba(63,208,122,.08)}   /* satisfied/secured = GREEN */
   .btile.dead{border-style:solid;opacity:.5}
   .btile .bh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:7px}
   .btile .bg{font-weight:800;font-size:14px}
   .btile .bp{font-weight:900;font-variant-numeric:tabular-nums;font-size:14px;color:var(--mut2)}
-  .btile.good .bp{color:var(--acc)}
+  .btile.good .bp{color:var(--ok)}
+  .btile.good .bstat{color:var(--ok);font-weight:700}
   .btile .cond{font-size:14.5px;font-weight:500;line-height:1.45;margin:2px 0 8px;color:var(--mut)}
   .btile .cond b{font-weight:800;color:var(--txt)}
   .btile .cond .bynote{color:var(--mut2);font-weight:600;font-size:12px}
-  .btile .cond.condgood{color:var(--acc);font-weight:700}
+  .btile .cond.condgood{color:var(--ok);font-weight:700}
   .btile .cond.condbad{color:var(--mut2);font-weight:700}
   .btile .bstat{font-size:12px;color:var(--mut2)}
   .btile .bstat .live,.bingo .live{display:inline-block;color:#fff;background:var(--acc);font-size:10px;font-weight:800;letter-spacing:.04em;
