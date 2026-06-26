@@ -340,58 +340,8 @@
   <div class="tabbar">
     <button class="tabbtn active" id="tabBtnThird" data-tab="Third" data-i18n="tabThird">🇰🇷 Will Korea make it to R32?</button>
     <button class="tabbtn" id="tabBtnFocus" data-tab="Focus" data-i18n="tabFocus">🧭 Who will play who in R32?</button>
-    <button class="tabbtn" id="tabBtnBoston" data-tab="Boston" data-i18n="tabBoston">🏟️ Who will play R32 in Boston?</button>
   </div>
 
-  <div id="tabBoston" class="tabpane">
-  <h2 class="sec" data-i18n="secBostonMatch">The most likely Boston matchup</h2>
-  <div class="panel mcard" id="matchCard">
-    <div class="mside s1">
-      <div class="fl" id="mFlagA">🟢</div>
-      <div class="seatlab" data-i18n="seatAlab">Seat A · Winner Group E</div>
-      <div class="team" id="mTeamA" data-i18n="runSim">Run the simulation</div>
-      <div class="pc"><b id="mPctA">—</b> <span data-i18n="toWinGroup">to win the group</span></div>
-    </div>
-    <div class="mvs"><div class="vsr">VS</div></div>
-    <div class="mside s2">
-      <div class="fl" id="mFlagB">🟣</div>
-      <div class="seatlab" data-i18n="seatBlab">Seat B · Wildcard 3rd place</div>
-      <div class="team" id="mTeamB">—</div>
-      <div class="pc"><b id="mPctB">—</b> <span data-i18n="toBeWild">to be the wildcard</span></div>
-    </div>
-    <div class="mtie" id="mTie" data-i18n="mTie">Two different teams fill this game — one from each race below.</div>
-  </div>
-
-  <h2 class="sec" data-i18n="secSeats">The two seats — each side has its own race</h2>
-  <div class="cols">
-    <div class="panel pcard">
-      <div class="seathead"><h3 data-i18n="seatAhead">🟢 Seat A — Winner of Group E</h3><span class="sum" data-i18n="sum100">adds up to 100%</span></div>
-      <p class="desc" data-i18n="seatAdesc">Only the <b>winner</b> of Group E takes Boston's home seat (the runner-up plays Match 78 elsewhere). These four are the only teams that can. Edit a rating and re-run.</p>
-      <div id="seat1"></div>
-      <p class="seatfoot" data-i18n="seatAfoot">% = chance to win Group E.</p>
-    </div>
-    <div class="panel pcard">
-      <div class="seathead"><h3 data-i18n="seatBhead">🟣 Seat B — Wildcard 3rd place</h3><span class="sum" data-i18n="sum100b">adds up to ~100%</span></div>
-      <p class="desc" data-i18n="seatBdesc">Exactly one team takes the away seat: a side that finishes <b>3rd</b> in Group A/B/C/D/F, survives as a best‑8 third, and is routed here by the bracket.</p>
-      <div id="seat2"></div>
-      <p class="seatfoot" data-i18n="seatBfoot">% = chance to be the team routed to Boston.</p>
-    </div>
-  </div>
-
-  <div class="cols" style="margin-top:18px">
-    <div class="panel pcard">
-      <h3 data-i18n="pairsHead">🎟️ Most likely exact matchups</h3>
-      <p class="desc" data-i18n="pairsDesc">The specific <b>A‑vs‑B</b> ties that come up most often across all simulations:</p>
-      <div id="pairs"></div>
-    </div>
-    <div class="panel pcard">
-      <h3 data-i18n="grpShareHead">🧭 Where the wildcard comes from</h3>
-      <p class="desc" data-i18n="grpShareDesc">Boston's 3rd‑place ticket is routed from one of these five groups by the official combination table. Share of simulations:</p>
-      <div class="grpshare" id="grpShare"></div>
-    </div>
-  </div>
-
-  </div><!-- /tabBoston -->
 
   <div id="tabFocus" class="tabpane">
     <h2 class="sec" data-i18n="secFocusOpp">Who will they play in the Round of 32?</h2>
@@ -822,7 +772,7 @@ function freshAcc(){
   return {n:0, winE:Object.assign({},z), third:Object.assign({},z),
           grp:{A:0,B:0,C:0,D:0,F:0}, pair:{},
           fFinish:[0,0,0,0], fRows:{},      // focus-team finish + (match|opponent) counts
-          tQual:{}, tTeam:{}, tPts:{}, tGd:{}, koR32:0,    // third-place race + Korea reach count
+          tQual:{}, tTeam:{}, tPts:{}, tGd:{}, tGf:{}, koR32:0,    // third-place race + Korea reach count
           belowKor:{}};                     // per-group: times that group's 3rd ranks below Korea
 }
 function simOnce(a){
@@ -840,6 +790,7 @@ function simOnce(a){
     (a.tTeam[g]=a.tTeam[g]||{})[t.team]=(a.tTeam[g][t.team]||0)+1;
     (a.tPts[g]=a.tPts[g]||{})[t.team]=(a.tPts[g][t.team]||0)+t.pts;   // per-team sums
     (a.tGd[g]=a.tGd[g]||{})[t.team]=(a.tGd[g][t.team]||0)+t.gd;
+    (a.tGf[g]=a.tGf[g]||{})[t.team]=(a.tGf[g][t.team]||0)+t.gf;
   });
   qg.forEach(g=>{ a.tQual[g]=(a.tQual[g]||0)+1; });
 
@@ -913,83 +864,6 @@ function run(){
 /* ----------------------------- RENDER --------------------------- */
 function pct(c){ return 100*(c||0)/acc.n; }
 function render(){
-  // Seat A — the Group E winner race (only these 4 teams can take it)
-  const seatA = GROUPS.E.map(t=>({t,p:pct(acc.winE[t])})).sort((a,b)=>b.p-a.p);
-  // Seat B — the wildcard 3rd-place race
-  const seatB = Object.keys(acc.third).map(t=>({t,p:pct(acc.third[t])}))
-                  .filter(o=>o.p>0.04).sort((a,b)=>b.p-a.p);
-  // Exact A-vs-B ties
-  const pairs = Object.keys(acc.pair).map(k=>{const i=k.indexOf('|');
-    return {a:k.slice(0,i), b:k.slice(i+1), p:pct(acc.pair[k])};}).sort((x,y)=>y.p-x.p);
-
-  // --- Matchup card (Seat A leader  VS  Seat B leader) ---
-  if(seatA.length){
-    const A=seatA[0], B=seatB[0]||{t:'—',p:0};
-    document.getElementById('mFlagA').textContent=FLAGS[A.t]||'🟢';
-    document.getElementById('mTeamA').textContent=TN(A.t);
-    document.getElementById('mPctA').textContent=A.p.toFixed(1)+'%';
-    document.getElementById('mFlagB').textContent=FLAGS[B.t]||'🟣';
-    document.getElementById('mTeamB').textContent=TN(B.t);
-    document.getElementById('mPctB').textContent=B.p.toFixed(1)+'%';
-    if(pairs.length){
-      const top=pairs[0], tie='<b>'+(FLAGS[top.a]||'')+' '+TN(top.a)+'  vs  '+(FLAGS[top.b]||'')+' '+TN(top.b)+'</b>';
-      document.getElementById('mTie').innerHTML=tt(
-        'Single most likely exact tie: '+tie+' — in <b>'+top.p.toFixed(1)+'%</b> of simulations. (Seat A and Seat B are two different teams.)',
-        '가장 유력한 정확한 대진: '+tie+' — 시뮬레이션의 <b>'+top.p.toFixed(1)+'%</b>. (A석과 B석은 서로 다른 두 팀입니다.)');
-    }
-  }
-
-  // --- Seat A list (editable, teal) ---
-  const maxA=seatA[0]?seatA[0].p:1;
-  const s1=document.getElementById('seat1'); s1.innerHTML='';
-  seatA.forEach((o,i)=>{
-    const d=document.createElement('div'); d.className='row seatrow editable';
-    d.innerHTML='<div class="rank">'+(i+1)+'</div><div class="fl">'+FLAGS[o.t]+'</div>'+
-      '<div class="main"><div class="top"><div class="nm">'+TN(o.t)+'</div>'+
-      '<div class="pct">'+o.p.toFixed(1)+'%</div></div>'+
-      '<div class="bar"><div class="seg win" style="width:'+(o.p/maxA*100).toFixed(2)+'%"></div></div></div>'+
-      '<input class="seatrate" type="number" data-team="'+o.t+'" value="'+RATINGS[o.t]+'">';
-    s1.appendChild(d);
-  });
-  bindRatingInputs(s1);
-
-  // --- Seat B list (purple) ---
-  const maxB=seatB[0]?seatB[0].p:1;
-  const s2=document.getElementById('seat2'); s2.innerHTML='';
-  seatB.forEach((o,i)=>{
-    const d=document.createElement('div'); d.className='row seatrow';
-    d.innerHTML='<div class="rank">'+(i+1)+'</div><div class="fl">'+FLAGS[o.t]+'</div>'+
-      '<div class="main"><div class="top"><div class="nm">'+TN(o.t)+
-      '<span class="grp">'+tt('Grp ','그룹 ')+GROUP_OF[o.t]+'</span></div>'+
-      '<div class="pct">'+o.p.toFixed(1)+'%</div></div>'+
-      '<div class="bar"><div class="seg third" style="width:'+(o.p/maxB*100).toFixed(2)+'%"></div></div></div>';
-    s2.appendChild(d);
-  });
-
-  // --- Exact matchups ---
-  const pr=document.getElementById('pairs'); pr.innerHTML='';
-  pairs.slice(0,8).forEach(o=>{
-    const d=document.createElement('div'); d.className='pairrow';
-    d.innerHTML='<div class="tm"><span class="fl">'+(FLAGS[o.a]||'')+'</span>'+TN(o.a)+
-      '<span class="vs2">VS</span><span class="fl">'+(FLAGS[o.b]||'')+'</span>'+TN(o.b)+'</div>'+
-      '<div class="pp">'+o.p.toFixed(1)+'%</div>';
-    pr.appendChild(d);
-  });
-
-  // --- Where the wildcard comes from ---
-  const gsWrap=document.getElementById('grpShare'); gsWrap.innerHTML='';
-  const totThird=['A','B','C','D','F'].reduce((s,g)=>s+acc.grp[g],0)||1;
-  ['A','B','C','D','F'].map(g=>({g,p:100*acc.grp[g]/totThird}))
-    .sort((a,b)=>b.p-a.p).forEach(o=>{
-    const el=document.createElement('div'); el.className='gs';
-    el.innerHTML='<div class="gl">'+tt('Group ','그룹 ')+o.g+'</div>'+
-      '<div class="gbar"><i style="width:'+o.p.toFixed(1)+'%"></i></div>'+
-      '<div class="gp">'+o.p.toFixed(0)+'%</div>';
-    el.title=tt('Group '+o.g+' ('+GROUPS[o.g].map(TN).join(', ')+') supplies Boston’s 3rd-place team in '+o.p.toFixed(1)+'% of runs',
-      '그룹 '+o.g+' ('+GROUPS[o.g].map(TN).join(', ')+')에서 보스턴 3위 팀이 나오는 비율 '+o.p.toFixed(1)+'%');
-    gsWrap.appendChild(el);
-  });
-
   renderFocus();
   renderThird();
   renderBoard();
@@ -1150,9 +1024,9 @@ function renderThird(){
   const rows=Object.keys(GROUPS).map(g=>{
     const teams=acc.tTeam[g]||{}; let modal='?',mc=-1;
     for(const t in teams){ if(teams[t]>mc || (teams[t]===mc && (RATINGS[t]||0)>(RATINGS[modal]||0))){mc=teams[t];modal=t;} }
-    const pts=((acc.tPts[g]||{})[modal]||0)/(mc||1), gd=((acc.tGd[g]||{})[modal]||0)/(mc||1);  // modal team's own line
-    return {g, team:modal, pts, gd, q:100*(acc.tQual[g]||0)/n, locked: lockResults && (PLAYED[g]||[]).length===6};
-  }).sort((a,b)=>b.q-a.q);
+    const pts=((acc.tPts[g]||{})[modal]||0)/(mc||1), gd=((acc.tGd[g]||{})[modal]||0)/(mc||1), gf=((acc.tGf[g]||{})[modal]||0)/(mc||1);  // modal team's own line
+    return {g, team:modal, pts, gd, gf, q:100*(acc.tQual[g]||0)/n, locked: lockResults && (PLAYED[g]||[]).length===6};
+  }).sort((a,b)=> b.pts-a.pts || b.gd-a.gd || b.gf-a.gf);   // real third-place table: points → GD → goals
 
   // status line + note reflect whether Korea's group is actually decided
   const kr=rows.find(r=>r.g===kg);
@@ -1181,10 +1055,10 @@ function renderThird(){
   const lr=lockedRows.map(r=>(FLAGS[r.team]||'')+' '+TN(r.team)).join(', ');
   const callout=document.getElementById('koCallout');
   if(callout) callout.innerHTML = nPlay>0
-    ? tt('✅ Only <b>'+nLock+' of 12</b> third-place spots are settled ('+lr+'). The other <b>'+nPlay+'</b> group'+(nPlay>1?'s':'')+' still play their final match — those teams can climb <b>above</b> Korea. Rows are ranked by each team’s <b>chance to finish in the top 8</b>, so this is a live projection, not a settled table.',
-         '✅ 3위 자리 <b>12개 중 '+nLock+'개</b>만 확정 ('+lr+'). 나머지 <b>'+nPlay+'</b>개 조는 최종전을 남겨 두어, 그 팀들이 한국 <b>위로</b> 올라설 수 있습니다. 각 행은 팀별 <b>상위 8위 진입 확률</b>로 정렬한 실시간 예측이며 확정된 표가 아닙니다.')
-    : tt('All 12 groups are complete — these are the final eight best third-place qualifiers.',
-         '12개 조 모두 완료 — 최종 최상위 8개 3위 진출팀입니다.');
+    ? tt('✅ Only <b>'+nLock+' of 12</b> third-place spots are settled ('+lr+'). The other <b>'+nPlay+'</b> group'+(nPlay>1?'s':'')+' still play their final match. Rows are ranked the real way — <b>points → goal difference → goals</b> — and the top 8 qualify; the % is each team’s chance to be a top-8 third. Unplayed groups (≈) are projections.',
+         '✅ 3위 자리 <b>12개 중 '+nLock+'개</b>만 확정 ('+lr+'). 나머지 <b>'+nPlay+'</b>개 조는 최종전을 남겨 뒀습니다. 각 행은 실제 규칙대로 <b>승점 → 골득실 → 득점</b> 순으로 정렬했고 상위 8팀이 진출합니다. %는 상위 8위 3위가 될 확률이며, 미진행 조(≈)는 예측값입니다.')
+    : tt('All 12 groups are complete — these are the final eight best third-place qualifiers, ranked by points → goal difference → goals.',
+         '12개 조 모두 완료 — 승점 → 골득실 → 득점 순으로 정렬한 최종 최상위 8개 3위 진출팀입니다.');
 
   const wrap=document.getElementById('thirdRace'); wrap.innerHTML='';
   rows.forEach((r,i)=>{
