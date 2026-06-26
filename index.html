@@ -267,32 +267,13 @@
     <h1>Road to <span class="b">Boston</span></h1>
     <p class="sub">Gillette Stadium, Foxborough MA · Mon June 29, 2026 · 4:30 PM ET<br>
       Which country is most likely to play here? Ranked by probability — <b>updated with live group-stage results</b>.</p>
-    <div class="matchup">
-      <div class="slot win"><span class="ic">🟢</span><span><span class="lab">Home slot — locked path</span><span class="nm">Winner of Group E</span></span></div>
-      <div class="vs">VS</div>
-      <div class="slot third"><span class="ic">🟣</span><span><span class="lab">Wildcard slot</span><span class="nm">Best 3rd place · Group A/B/C/D/F</span></span></div>
-    </div>
-    <div class="note">
-      Boston's Round-of-32 game has <b>two tickets</b>. One always goes to whoever <b>wins Group E</b>
-      (Germany, Ecuador, Ivory Coast or Curaçao). The other goes to one of the <b>best third-placed teams</b>,
-      which the official bracket draws from <b>Groups A, B, C, D or F</b>. That's why Group E sides sit on top of the ranking.
-    </div>
   </header>
 
   <div class="panel controls">
+    <button class="runbtn" id="liveBtn">↻ Refresh from live data</button>
     <div class="grow">
-      <label>Simulations: <span class="simcount" id="simLabel">20,000</span></label>
-      <input type="range" id="simRange" min="2000" max="60000" step="2000" value="20000">
-    </div>
-    <button class="runbtn" id="runBtn">▶ Run simulation</button>
-    <button class="ghostbtn" id="resetBtn">Reset ratings</button>
-    <div style="flex-basis:100%;display:flex;gap:18px;align-items:center;flex-wrap:wrap">
-      <label class="chk"><input type="checkbox" id="useResults" checked> Lock in real results <span id="resTag">(live)</span></label>
-      <button class="ghostbtn" id="liveBtn">↻ Refresh from live data</button>
-    </div>
-    <div style="flex-basis:100%">
       <div class="progwrap"><div class="progbar" id="prog"></div></div>
-      <div class="status" id="status">Ready. Click “Run simulation”.</div>
+      <div class="status" id="status">50,000 simulations · live results locked.</div>
     </div>
   </div>
 
@@ -301,7 +282,7 @@
     <div class="body">
       <p>These completed matches are <b>locked</b> in every simulation; only the remaining fixtures are simulated. Source:
         <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a>.
-        Uncheck “Lock in real results” above to compare with the pre-tournament forecast.</p>
+        Hit <b>Refresh from live data</b> to pull the latest scores.</p>
       <div class="resgrid" id="resGrid"></div>
     </div>
   </details>
@@ -700,26 +681,26 @@ function simOnce(a){
   a.n++;
 }
 
+const SIMS=50000;            // always run 50,000 simulations
 function run(){
   const token=++runningToken;
-  const total=+document.getElementById('simRange').value;
-  lockResults=document.getElementById('useResults').checked;
+  const total=SIMS;
+  lockResults=true;          // real results always locked in
   acc=freshAcc();
-  const btn=document.getElementById('runBtn'); btn.disabled=true;
+  const btn=document.getElementById('liveBtn'); if(btn) btn.disabled=true;
   const t0=performance.now();
   const CHUNK=1500;
   (function step(){
     if(token!==runningToken) return;          // superseded by a newer run
     const end=Math.min(acc.n+CHUNK,total);
     while(acc.n<end) simOnce(acc);
-    const frac=acc.n/total;
-    document.getElementById('prog').style.width=(frac*100).toFixed(1)+'%';
+    document.getElementById('prog').style.width=(100*acc.n/total).toFixed(1)+'%';
     document.getElementById('status').textContent='Simulating… '+acc.n.toLocaleString()+' / '+total.toLocaleString();
     if(acc.n<total){ setTimeout(step,0); }
     else{
       const ms=(performance.now()-t0).toFixed(0);
-      document.getElementById('status').textContent='Done — '+total.toLocaleString()+' sims in '+ms+' ms · '+(lockResults?('real results locked through '+RESULTS_DATE):'pre-tournament mode (results ignored)')+'.';
-      btn.disabled=false;
+      document.getElementById('status').textContent='50,000 simulations · live results locked through '+RESULTS_DATE+' · '+ms+' ms.';
+      if(btn) btn.disabled=false;
       render();
     }
   })();
@@ -937,7 +918,7 @@ function bindRatingInputs(scope){
   scope.querySelectorAll('input[data-team]').forEach(inp=>{
     inp.addEventListener('change',()=>{
       const v=Math.max(800,Math.min(2200,+inp.value||DEFAULT_RATINGS[inp.dataset.team]));
-      RATINGS[inp.dataset.team]=v; inp.value=v; syncRatingInputs();
+      RATINGS[inp.dataset.team]=v; inp.value=v; syncRatingInputs(); run();  // re-run on edit (no Run button)
     });
   });
 }
@@ -998,7 +979,6 @@ async function refreshLive(){
     if(total===0) throw new Error('no completed matches found for today');
     for(const g in PLAYED) delete PLAYED[g]; Object.assign(PLAYED,np);
     RESULTS_DATE=latest; renderResultsPanel();
-    document.getElementById('useResults').checked=true;
     st.textContent='Live results loaded ('+total+' matches through '+latest+'). Re-running…';
     run();
   }catch(e){
@@ -1029,21 +1009,12 @@ function setupTabs(){
 }
 
 /* ----------------------------- INIT ----------------------------- */
-document.getElementById('simRange').addEventListener('input',e=>{
-  document.getElementById('simLabel').textContent=(+e.target.value).toLocaleString();
-});
-document.getElementById('runBtn').addEventListener('click',run);
 document.getElementById('liveBtn').addEventListener('click',refreshLive);
-document.getElementById('useResults').addEventListener('change',run);
-document.getElementById('resetBtn').addEventListener('click',()=>{
-  RATINGS=Object.assign({},DEFAULT_RATINGS); syncRatingInputs();
-  document.getElementById('status').textContent='Ratings reset to FIFA-ranking defaults. Run again.';
-});
 buildAllRatings();
 buildFocusSelect();
 setupTabs();
 renderResultsPanel();
-run(); // auto-run once on load
+run(); // auto-run 50k on load
 </script>
 </body>
 </html>
