@@ -1023,77 +1023,69 @@ function renderThird(){
   document.getElementById('koQual').textContent=koQ.toFixed(0)+'%';
   document.getElementById('koGauge').style.width=Math.max(2,koQ).toFixed(1)+'%';
 
+  // Real CURRENT third-place table: each group's current 3rd-placer with their ACTUAL points
+  // so far (finished groups = final; mid-way groups = points from games already played).
+  // Nothing is projected. Ranked by the real rule: points → goal difference → goals.
   const rows=Object.keys(GROUPS).map(g=>{
-    const teams=acc.tTeam[g]||{}; let modal='?',mc=-1;
-    for(const t in teams){ if(teams[t]>mc || (teams[t]===mc && (RATINGS[t]||0)>(RATINGS[modal]||0))){mc=teams[t];modal=t;} }
-    const pts=((acc.tPts[g]||{})[modal]||0)/(mc||1), gd=((acc.tGd[g]||{})[modal]||0)/(mc||1), gf=((acc.tGf[g]||{})[modal]||0)/(mc||1);  // modal team's own line
-    return {g, team:modal, pts, gd, gf, q:100*(acc.tQual[g]||0)/n, locked: lockResults && (PLAYED[g]||[]).length===6};
-  }).sort((a,b)=> b.pts-a.pts || b.gd-a.gd || b.gf-a.gf);   // real third-place table: points → GD → goals
+    const st=baseStandObj(g);
+    const tbl=GROUPS[g].map(t=>({team:t,pts:st[t].pts,gd:st[t].gf-st[t].ga,gf:st[t].gf}))
+                       .sort((a,b)=> b.pts-a.pts || b.gd-a.gd || b.gf-a.gf);
+    const third=tbl[2], done=(PLAYED[g]||[]).length===6;
+    const teamPl=(PLAYED[g]||[]).filter(m=>m[0]===third.team||m[1]===third.team).length;
+    return {g, team:third.team, pts:third.pts, gd:third.gd, gf:third.gf, done,
+            left:Math.max(0,3-teamPl), live:groupLive(g), q:100*(acc.tQual[g]||0)/n};
+  }).sort((a,b)=> b.pts-a.pts || b.gd-a.gd || b.gf-a.gf);
 
-  // Only FINISHED groups have real points, so only those are ranked. Groups still to play
-  // have no settled third yet — they go in a separate section, never ranked above Korea.
   const kr=rows.find(r=>r.g===kg);
   const koLocked = lockResults && (PLAYED[kg]||[]).length===6 && kr.team==='South Korea';
-  const lockedR=rows.filter(r=>r.locked);      // already sorted points → GD → goals
-  const toplayR=rows.filter(r=>!r.locked).sort((a,b)=> a.g<b.g?-1:1);
-  const nPlayG=toplayR.length;
-  const better=(a,b)=> a.pts>b.pts || (a.pts===b.pts && (a.gd>b.gd || (a.gd===b.gd && a.gf>b.gf)));
-  const aboveKo=lockedR.filter(r=> r.g!==kg && better(r,kr)).length;   // finished thirds already above Korea
-  const needFromPlay=Math.max(0, nPlayG-(7-aboveKo));                  // to-play groups that must end weaker than Korea
-
-  const gd0=(kr.gd>=0?'+':'')+kr.gd.toFixed(0);
+  const koRank=rows.findIndex(r=>r.g===kg)+1, koIn=koRank<=8;
+  const nPlayG=rows.filter(r=>!r.done).length;
+  const gd0=(kr.gd>=0?'+':'')+kr.gd;
   document.getElementById('koStatus').innerHTML = koLocked
-    ? tt(TN(KO)+' · Group '+kg+' · finished <b>3rd</b> ('+kr.pts.toFixed(0)+' pts, GD '+gd0+')',
-         TN(KO)+' · 그룹 '+kg+' · <b>3위</b>로 마감 ('+kr.pts.toFixed(0)+'점, 골득실 '+gd0+')')
+    ? tt(TN(KO)+' · Group '+kg+' · finished <b>3rd</b> ('+kr.pts+' pts, GD '+gd0+')',
+         TN(KO)+' · 그룹 '+kg+' · <b>3위</b>로 마감 ('+kr.pts+'점, 골득실 '+gd0+')')
     : tt(TN(KO)+' · Group '+kg+' · live projection (group not yet decided)',
          TN(KO)+' · 그룹 '+kg+' · 실시간 예측 (조 미확정)');
+
   document.getElementById('koNote').innerHTML = koLocked
     ? (nPlayG===0
-        ? (aboveKo<8
-            ? tt('Korea finished 3rd on <b>'+kr.pts.toFixed(0)+' pts</b> with only <b>'+aboveKo+'</b> thirds above it — inside the top 8. <b>Through.</b>',
-                 '한국은 <b>'+kr.pts.toFixed(0)+'점</b>으로 3위, 위에 단 <b>'+aboveKo+'팀</b> — 상위 8위 안. <b>진출!</b>')
-            : tt('Korea finished 3rd but <b>'+aboveKo+'</b> thirds finished above it — outside the top 8.',
-                 '한국은 3위지만 위에 <b>'+aboveKo+'팀</b> — 상위 8위 밖.'))
-        : tt('Korea finished 3rd on <b>'+kr.pts.toFixed(0)+' pts</b>. <b>'+aboveKo+'</b> already-finished thirds are above it. Since 8 of 12 qualify, Korea needs at least <b>'+needFromPlay+' of the '+nPlayG+'</b> still-to-play groups to end with a <b>weaker</b> third — currently <b>'+koQ.toFixed(0)+'%</b>. (The groups below haven’t played, so they have no points yet.)',
-             '한국은 <b>'+kr.pts.toFixed(0)+'점</b>으로 3위. <b>이미 끝난 3위 중 '+aboveKo+'팀</b>이 한국보다 위입니다. 12팀 중 8팀이 진출하므로, 아직 안 끝난 <b>'+nPlayG+'개 조 중 '+needFromPlay+'팀 이상</b>이 한국보다 <b>약한</b> 3위로 끝나야 합니다 — 현재 <b>'+koQ.toFixed(0)+'%</b>. (아래 조들은 아직 안 뛰어서 승점이 없습니다.)'))
-    : tt('Korea can still finish anywhere in Group '+kg+'; if they end up 3rd they must be a <b>top-8 third</b>.',
-         '한국은 아직 그룹 '+kg+'에서 어떤 순위로도 마칠 수 있고, 3위로 마치면 <b>최상위 8개 3위</b>에 들어야 합니다.');
+        ? (koIn ? tt('Korea is <b>'+koRank+'th</b> of 12 thirds — inside the top 8. <b>Through.</b>',
+                     '한국은 3위 12팀 중 <b>'+koRank+'위</b> — 상위 8위 안. <b>진출!</b>')
+                : tt('Korea is <b>'+koRank+'th</b> of 12 thirds — outside the top 8.',
+                     '한국은 3위 12팀 중 <b>'+koRank+'위</b> — 상위 8위 밖.'))
+        : tt('By <b>points so far</b>, Korea is <b>'+koRank+'th</b> of the 12 thirds — '+(koIn?'inside':'below')+' the top 8. <b>'+nPlayG+'</b> group'+(nPlayG>1?'s are':' is')+' still mid-way, so the teams around Korea can still move on their last game. Korea’s final chance: <b>'+koQ.toFixed(0)+'%</b>.',
+             '<b>현재까지 승점</b> 기준 한국은 3위 12팀 중 <b>'+koRank+'위</b> — 상위 8위 '+(koIn?'안':'밖')+'입니다. 아직 <b>'+nPlayG+'개 조</b>가 진행 중이라 주변 팀들이 마지막 경기로 순위가 바뀔 수 있어요. 한국의 최종 진출 확률은 <b>'+koQ.toFixed(0)+'%</b>.'))
+    : tt('Korea can still finish anywhere in Group '+kg+'; if 3rd, they must be a <b>top-8 third</b>.',
+         '한국은 아직 그룹 '+kg+'에서 어떤 순위로도 마칠 수 있고, 3위면 <b>최상위 8개 3위</b>에 들어야 합니다.');
 
   const callout=document.getElementById('koCallout');
   if(callout) callout.innerHTML = nPlayG>0
-    ? tt('Only <b>finished</b> thirds have real points, so only they are ranked here (<b>points → goal difference → goals</b>). The <b>'+nPlayG+'</b> group'+(nPlayG>1?'s':'')+' still to play haven’t produced a third yet — listed separately below, <b>not</b> placed above Korea on a guess. 8 of 12 qualify.',
-         '<b>경기를 마친</b> 3위만 실제 승점이 있으므로 그 팀들만 여기서 <b>승점 → 골득실 → 득점</b> 순으로 정렬합니다. 아직 안 끝난 <b>'+nPlayG+'개 조</b>는 3위가 정해지지 않아 — 추측으로 한국 위에 두지 않고 아래에 따로 표시합니다. 12팀 중 8팀 진출.')
-    : tt('All 12 groups are done — the final third-place table, ranked by points → goal difference → goals. Top 8 qualify.',
-         '12개 조 모두 완료 — 승점 → 골득실 → 득점 순 최종 3위 표입니다. 상위 8팀 진출.');
+    ? tt('Each group’s current 3rd-placer with their <b>actual points so far</b>, ranked <b>points → goal difference → goals</b>. “종료” = group finished; the others are still mid-way (games left) so their order can still change. The % is each group’s chance to send a qualifying third. Top 8 advance.',
+         '각 조의 현재 3위와 <b>지금까지의 실제 승점</b>을 <b>승점 → 골득실 → 득점</b> 순으로 정렬했습니다. ‘종료’=경기 끝난 조이고, 나머지는 아직 진행 중(경기 남음)이라 순위가 바뀔 수 있어요. %는 각 조가 진출 3위를 낼 확률. 상위 8팀 진출.')
+    : tt('Every third-placer’s final points, ranked points → goal difference → goals. Top 8 advance.',
+         '각 3위의 최종 승점을 승점 → 골득실 → 득점 순으로 정렬. 상위 8팀 진출.');
 
-  // ----- finished thirds, ranked by real points; cut line only when the table is final -----
   const wrap=document.getElementById('thirdRace'); wrap.innerHTML='';
-  lockedR.forEach((r,i)=>{
-    if(nPlayG===0 && i===8){ const cl=document.createElement('div'); cl.className='cutline';
-      cl.textContent=tt('✂ top 8 advance','✂ 상위 8팀 진출'); wrap.appendChild(cl); }
-    const cls=nPlayG===0?(i<8?' in':' out'):'';
-    const d=document.createElement('div'); d.className='trow'+cls+(r.g===kg?' koreahl':'');
-    const pts=r.pts.toFixed(0)+tt(' pts · GD ',' 점 · 골득실 ')+(r.gd>=0?'+':'')+r.gd.toFixed(0);
+  rows.forEach((r,i)=>{
+    if(i===8){ const cl=document.createElement('div'); cl.className='cutline'+((!koIn&&nPlayG>0)?' alive':'');
+      cl.textContent = nPlayG===0
+        ? tt('✂ top 8 advance — final','✂ 상위 8팀 진출 — 최종')
+        : !koIn
+        ? tt('✂ top 8 advance · Korea is '+koRank+'th by points so far — '+nPlayG+' groups still playing can shift this ('+koQ.toFixed(0)+'%)',
+             '✂ 상위 8팀 진출 · 현재 승점 기준 한국 '+koRank+'위 — 진행 중 '+nPlayG+'개 조로 바뀔 수 있음 ('+koQ.toFixed(0)+'%)')
+        : tt('✂ top 8 advance — '+nPlayG+' groups still mid-way, the order can still shift',
+             '✂ 상위 8팀 진출 — 진행 중 '+nPlayG+'개 조로 순위가 바뀔 수 있음');
+      wrap.appendChild(cl); }
+    const d=document.createElement('div'); d.className='trow '+(i<8?'in':'out')+(r.done?'':' proj')+(r.g===kg?' koreahl':'');
+    const pts=r.pts+tt(' pts · GD ',' 점 · 골득실 ')+(r.gd>=0?'+':'')+r.gd;
+    const stat=r.done?'<span class="tstat lock">'+tt('✓ done','✓ 종료')+'</span>'
+      :(r.live?'<span class="tstat live">'+tt('🔴 live','🔴 라이브')+'</span>'
+        :'<span class="tstat play">'+tt(r.left+' left',r.left+'경기 남음')+'</span>');
     d.innerHTML='<div class="rk">'+(i+1)+'</div><div class="fl">'+(FLAGS[r.team]||'')+'</div>'+
-      '<div class="nm">'+TN(r.team)+'<span class="gl">'+tt('Grp ','그룹 ')+r.g+'</span><span class="tstat lock">'+tt('✓ played','✓ 종료')+'</span></div>'+
+      '<div class="nm">'+TN(r.team)+'<span class="gl">'+tt('Grp ','그룹 ')+r.g+'</span>'+stat+'</div>'+
       '<div class="pts">'+pts+'</div><div class="qp">'+r.q.toFixed(0)+'%</div>';
     wrap.appendChild(d);
   });
-  // ----- still-to-play groups: no settled third, no points, never above Korea -----
-  if(nPlayG>0){
-    const dv=document.createElement('div'); dv.className='cutline alive';
-    dv.textContent=tt('— still to play · '+nPlayG+' group'+(nPlayG>1?'s':'')+', third not decided yet —','— 아직 안 끝난 '+nPlayG+'개 조 · 3위 미정 —');
-    wrap.appendChild(dv);
-    toplayR.forEach(r=>{
-      const live=groupLive(r.g);
-      const stat=live?'<span class="tstat live">'+tt('🔴 live','🔴 라이브')+'</span>':'<span class="tstat play">'+tt('⏳ to play','⏳ 경기 전')+'</span>';
-      const d=document.createElement('div'); d.className='trow proj'+(r.g===kg?' koreahl':'');
-      d.innerHTML='<div class="rk">·</div><div class="fl">'+(FLAGS[r.team]||'')+'</div>'+
-        '<div class="nm">'+tt('Group ','그룹 ')+r.g+' '+tt('3rd — TBD','3위 — 미정')+'<span class="gl">'+tt('likely ','유력 ')+TN(r.team)+'</span>'+stat+'</div>'+
-        '<div class="pts">'+tt('awaiting result','결과 대기')+'</div><div class="qp">—</div>';
-      wrap.appendChild(d);
-    });
-  }
 }
 
 /* ------------------- FOCUS (any-team R32 opponent) -------------- */
