@@ -269,6 +269,7 @@
   .tstat{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:99px;margin-left:8px;vertical-align:1px;white-space:nowrap}
   .tstat.lock{background:rgba(255,70,85,.16);color:var(--acc)}
   .tstat.play{background:rgba(255,138,60,.14);color:var(--acc2)}
+  .tstat.live{background:var(--acc);color:#fff;animation:pulse 1.4s ease-in-out infinite}
   .trow.proj .nm{font-style:italic;color:var(--mut)}
   .trow.proj .fl{opacity:.8}
   .trow.proj .pts{font-style:italic}
@@ -281,13 +282,15 @@
   .btile.good{box-shadow:inset 0 0 0 1px rgba(255,70,85,.45);background:rgba(255,70,85,.05)}
   .btile .bh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:7px}
   .btile .bg{font-weight:800;font-size:14px}
-  .btile .bp{font-weight:900;font-variant-numeric:tabular-nums;font-size:15px;color:var(--mut2)}
+  .btile .bp{font-weight:900;font-variant-numeric:tabular-nums;font-size:14px;color:var(--mut2)}
   .btile.good .bp{color:var(--acc)}
-  .btile .proj{font-size:11.5px;color:var(--mut2);margin-bottom:9px;line-height:1.4}
-  .bm{display:flex;align-items:center;gap:6px;font-size:12.5px;padding:3px 0;color:var(--mut)}
-  .bm .fl{font-size:15px} .bm .vs{color:var(--mut2);font-size:10px;font-weight:700;margin:0 1px}
-  .bm .when{margin-left:auto;color:var(--mut2);font-size:11px;white-space:nowrap}
-  .bm .live{margin-left:auto;color:#fff;background:var(--acc);font-size:10px;font-weight:800;letter-spacing:.04em;
+  .btile .cond{font-size:14.5px;font-weight:500;line-height:1.45;margin:2px 0 8px;color:var(--mut)}
+  .btile .cond b{font-weight:800;color:var(--txt)}
+  .btile .cond .bynote{color:var(--mut2);font-weight:600;font-size:12px}
+  .btile .cond.condgood{color:var(--acc);font-weight:700}
+  .btile .cond.condbad{color:var(--mut2);font-weight:700}
+  .btile .bstat{font-size:12px;color:var(--mut2)}
+  .btile .bstat .live,.bingo .live{display:inline-block;color:#fff;background:var(--acc);font-size:10px;font-weight:800;letter-spacing:.04em;
     padding:1px 8px;border-radius:99px;animation:pulse 1.4s ease-in-out infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
   .banked{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:15px}
@@ -437,18 +440,18 @@
       <p class="seatfoot" id="koNote">Calculating Korea's third-place qualification odds…</p>
     </div>
 
-    <h2 class="sec">🎯 What needs to happen — the bingo board</h2>
-    <div class="panel" style="padding:18px 20px">
-      <div class="boardhead" id="boardHead"></div>
-      <div class="bingo" id="bingo"></div>
-      <div class="banked" id="boardBanked"></div>
-      <p class="seatfoot" id="boardFoot">“%” = chance that group ends with a 3rd‑placer <b>weaker than Korea</b> (so it helps). Live scores aren't in the free data feed, so an in‑progress match shows <span style="color:var(--acc)">🔴 LIVE</span> without a score — odds update when it finishes (hit Refresh).</p>
-    </div>
-
     <h2 class="sec">The third-place race — 8 of 12 qualify</h2>
     <div class="panel" style="padding:16px 18px">
       <div class="qcallout" id="koCallout"></div>
       <div id="thirdRace"></div>
+    </div>
+
+    <h2 class="sec">🎯 What needs to happen</h2>
+    <div class="panel" style="padding:18px 20px">
+      <div class="boardhead" id="boardHead"></div>
+      <div class="bingo" id="bingo"></div>
+      <div class="banked" id="boardBanked"></div>
+      <p class="seatfoot" id="boardFoot">Each card names what Korea needs from that group's <b>decisive match</b> — “seals it” means it's guaranteed enough; “not a lock” means it's necessary but a freak result elsewhere could still spoil it. ⏰ upcoming · <span style="color:var(--acc)">🔴 LIVE</span> in progress (live scores aren't in the free feed, so there's no scoreline — odds refresh when it ends) · ✅ went Korea's way · ✕ didn't.</p>
     </div>
   </div><!-- /tabThird -->
 
@@ -865,12 +868,83 @@ function kickoffMs(date,time){
   return Date.parse(date+'T'+mt[1].padStart(2,'0')+':'+mt[2]+':00'+sign+oh+':00');
 }
 function fmtKick(ms){ try{ return new Date(ms).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }catch(e){ return ''; } }
+function groupLive(g){ const now=Date.now(); return (FIXTURES[g]||[]).some(m=>{const ms=kickoffMs(m[2],m[3]); return isFinite(ms)&&now>=ms&&now<ms+115*60000;}); }
+// Standings from the played matches only (no simulation).
+function baseStandObj(g){
+  const st={}; GROUPS[g].forEach(t=>st[t]={pts:0,gf:0,ga:0});
+  (lockResults?(PLAYED[g]||[]):[]).forEach(([a,b,x,y])=>{ st[a].gf+=x;st[a].ga+=y;st[b].gf+=y;st[b].ga+=x;
+    if(x>y)st[a].pts+=3; else if(y>x)st[b].pts+=3; else {st[a].pts++;st[b].pts++;} });
+  return st;
+}
+// Deterministically enumerate every scoreline of a group's remaining matches and find,
+// per match, the share of outcomes where that group's 3rd-placer ends WEAKER than Korea.
+function enumGroup(g){
+  const teams=GROUPS[g], played=lockResults?(PLAYED[g]||[]):[];
+  const has=(a,b)=>played.some(m=>(m[0]===a&&m[1]===b)||(m[0]===b&&m[1]===a));
+  const rem=(FIXTURES[g]||[]).filter(m=>!has(m[0],m[1]));
+  if(!rem.length) return null;
+  const ka=baseStandObj('A')['South Korea']; const koP=ka.pts, koGd=ka.gf-ka.ga, koGf=ka.gf;
+  const base=baseStandObj(g);
+  const MX=8, SS=[]; for(let x=0;x<MX;x++)for(let y=0;y<MX;y++)SS.push([x,y]);
+  const tally=rem.map(()=>({w0:[0,0],draw:[0,0],w1:[0,0]}));
+  let fav=0,tot=0;
+  function evalSc(sc){
+    const st={}; teams.forEach(t=>st[t]={pts:base[t].pts,gf:base[t].gf,ga:base[t].ga});
+    rem.forEach((m,mi)=>{const x=sc[mi][0],y=sc[mi][1]; st[m[0]].gf+=x;st[m[0]].ga+=y;st[m[1]].gf+=y;st[m[1]].ga+=x;
+      if(x>y)st[m[0]].pts+=3; else if(y>x)st[m[1]].pts+=3; else {st[m[0]].pts++;st[m[1]].pts++;}});
+    const rows=teams.map(t=>({pts:st[t].pts,gd:st[t].gf-st[t].ga,gf:st[t].gf})).sort((p,q)=>q.pts-p.pts||q.gd-p.gd||q.gf-p.gf);
+    const th=rows[2];
+    const w = th.pts<koP || (th.pts===koP&&th.gd<koGd) || (th.pts===koP&&th.gd===koGd&&th.gf<koGf);
+    tot++; if(w)fav++;
+    rem.forEach((m,mi)=>{const x=sc[mi][0],y=sc[mi][1]; const lab=x>y?'w0':(y>x?'w1':'draw'); tally[mi][lab][1]++; if(w)tally[mi][lab][0]++;});
+  }
+  (function loop(mi,a){ if(mi===rem.length){evalSc(a);return;} for(const s of SS){a.push(s);loop(mi+1,a);a.pop();} })(0,[]);
+  const v=rem.map((m,mi)=>{const t=tally[mi],h=r=>t[r][1]?100*t[r][0]/t[r][1]:0;
+    const hA=h('w0'),hD=h('draw'),hB=h('w1'); return {m,hA,hD,hB,spread:Math.max(hA,hD,hB)-Math.min(hA,hD,hB)};});
+  v.sort((a,b)=>b.spread-a.spread);
+  return {fav:100*fav/tot, decisive:v[0]};
+}
+// Turn per-result help shares into a plain-English condition.
+// hA/hD/hB = % of scorelines in which "A wins / draw / B wins" leaves this group's
+// 3rd-placer WEAKER than Korea. We state what is NECESSARY, and only say "seals it"
+// for an outcome that is 100% sufficient — never overstate a result that merely helps.
+function condHTML(A,B,hA,hD,hB){
+  const FL=t=>'<b>'+(FLAGS[t]||'')+' '+t+'</b>';
+  const beat=(x,y)=>FL(x)+' must beat '+FL(y);
+  const drawc=FL(A)+' &amp; '+FL(B)+' must draw';
+  const note=s=>' <span class="bynote">'+s+'</span>';
+  const G=99,Z=1.5;
+  const suf=[hA>=G,hD>=G,hB>=G];   // single outcome that ALONE seals it
+  const dead=[hA<=Z,hD<=Z,hB<=Z];  // single outcome that kills Korea's hope here
+  // 1) one outcome is both necessary AND sufficient
+  if(suf[0]&&dead[1]&&dead[2]) return beat(A,B);
+  if(suf[2]&&dead[0]&&dead[1]) return beat(B,A);
+  if(suf[1]&&dead[0]&&dead[2]) return drawc;
+  // 2) exactly one outcome is a certain spoiler -> state the necessary "avoid it" condition
+  if(dead[1]&&!dead[0]&&!dead[2])  // a draw eliminates Korea -> someone must win
+    return FL(A)+' or '+FL(B)+' must win'+(suf[0]?note('('+FL(A)+' win seals it)'):suf[2]?note('('+FL(B)+' win seals it)'):note('(either winner gives Korea the edge)'));
+  if(dead[0]&&!dead[1]&&!dead[2])  // A winning kills it -> B must win or draw
+    return FL(B)+' must win or draw with '+FL(A)+(suf[1]?note('(a draw seals it)'):'');
+  if(dead[2]&&!dead[0]&&!dead[1])  // B winning kills it -> A must win or draw
+    return FL(A)+' must win or draw with '+FL(B)+(suf[1]?note('(a draw seals it)'):'');
+  // 3) exactly one outcome gives ANY help -> necessary, flag if it isn't a lock
+  const help=[['A',hA],['D',hD],['B',hB]].filter(x=>x[1]>Z);
+  if(help.length===1){ const r=help[0][0], base=r==='A'?beat(A,B):r==='B'?beat(B,A):drawc;
+    return base+(help[0][1]>=G?'':note('(needed — still not a lock)')); }
+  // 4) a single outcome seals it while others only partly help
+  if(suf[1]) return FL(A)+' &amp; '+FL(B)+' drawing seals it'+note('(a '+FL(hB>=hA?B:A)+' win usually does too)');
+  if(suf[0]) return beat(A,B)+' seals it'+note('(or a kind result elsewhere)');
+  if(suf[2]) return beat(B,A)+' seals it'+note('(or a kind result elsewhere)');
+  // 5) nothing fully sufficient -> name the single best chance, honestly flagged
+  const best=Math.max(hA,hD,hB);
+  return (best===hA?beat(A,B):best===hB?beat(B,A):drawc)+note('(best chance — not a lock)');
+}
 function renderBoard(){
   const host=document.getElementById('bingo'); if(!host) return;
   const n=acc.n||1, now=Date.now();
   const NONA=Object.keys(GROUPS).filter(g=>g!=='A');
   const done=g=>lockResults && (PLAYED[g]||[]).length===6;
-  const prob=g=>100*(acc.belowKor[g]||0)/n;                 // chance this group's 3rd ends below Korea
+  const prob=g=>100*(acc.belowKor[g]||0)/n;
   const settledAbove=NONA.filter(g=>done(g)&&prob(g)<50).length;
   const remaining=NONA.filter(g=>!done(g));
   const banked=NONA.filter(g=>done(g)&&prob(g)>=50);
@@ -878,27 +952,26 @@ function renderBoard(){
   const onTrack=remaining.filter(g=>prob(g)>=50).length;
 
   document.getElementById('boardHead').innerHTML = remaining.length===0
-    ? 'Every group is done — see Korea’s final verdict in the headline above.'
-    : 'Korea has finished 3rd, so it’s out of their hands. They need <span class="need">'+needed+' of '+remaining.length+'</span> of the remaining groups to end with a 3rd‑placer <b>weaker than Korea</b> (3 pts, −1 GD). '+
-      '✅ <b>'+banked.length+'</b> already banked · ⏳ <b>'+onTrack+' of '+remaining.length+'</b> currently leaning Korea’s way.';
+    ? 'Every group is done — see Korea’s verdict in the headline above.'
+    : 'Korea finished 3rd, so it’s out of their hands. They need <span class="need">'+needed+' of '+remaining.length+'</span> remaining groups to go their way. '+
+      '✅ <b>'+banked.length+'</b> banked · ⏳ <b>'+onTrack+' of '+remaining.length+'</b> currently leaning their way.';
 
   host.innerHTML='';
-  remaining.map(g=>({g,p:prob(g)})).sort((a,b)=>b.p-a.p).forEach(o=>{
-    const g=o.g, proj=modalThird(g), good=o.p>=50;
+  remaining.map(g=>({g,p:prob(g),e:enumGroup(g)})).sort((a,b)=>b.p-a.p).forEach(o=>{
+    const g=o.g, e=o.e; const good=o.p>=50;
     const tile=document.createElement('div'); tile.className='btile'+(good?' good':'');
-    let mh='';
-    (FIXTURES[g]||[]).forEach(m=>{
-      const ms=kickoffMs(m[2],m[3]); let when;
-      if(isFinite(ms)){
-        if(now<ms) when='<span class="when">'+fmtKick(ms)+'</span>';
-        else if(now<ms+115*60000) when='<span class="live">🔴 LIVE</span>';
-        else when='<span class="when">awaiting result</span>';
-      } else when='<span class="when">'+(m[3]||'TBD')+'</span>';
-      mh+='<div class="bm"><span class="fl">'+(FLAGS[m[0]]||'')+'</span>'+m[0]+
-        '<span class="vs">v</span>'+m[1]+'<span class="fl">'+(FLAGS[m[1]]||'')+'</span>'+when+'</div>';
-    });
-    tile.innerHTML='<div class="bh"><div class="bg">Group '+g+'</div><div class="bp">'+o.p.toFixed(0)+'%</div></div>'+
-      '<div class="proj">Likely 3rd: <b>'+(FLAGS[proj]||'')+' '+proj+'</b> — must stay below Korea</div>'+mh;
+    let body;
+    if(!e){ body='<div class="cond">resolving…</div>'; }
+    else if(e.fav>=99.5){ tile.className='btile good'; body='<div class="cond condgood">✅ Already going Korea’s way</div>'; }
+    else if(e.fav<=0.5){ tile.className='btile'; body='<div class="cond condbad">✕ Can no longer help Korea</div>'; }
+    else {
+      const d=e.decisive, m=d.m, cond=condHTML(m[0],m[1],d.hA,d.hD,d.hB);
+      const ms=kickoffMs(m[2],m[3]); let stat;
+      if(isFinite(ms)){ if(now<ms) stat='⏰ '+fmtKick(ms); else if(now<ms+115*60000) stat='<span class="live">🔴 LIVE</span>'; else stat='awaiting result'; }
+      else stat=(m[3]||'');
+      body='<div class="cond">'+cond+'</div><div class="bstat">'+stat+'</div>';
+    }
+    tile.innerHTML='<div class="bh"><div class="bg">Group '+g+'</div><div class="bp">'+o.p.toFixed(0)+'%</div></div>'+body;
     host.appendChild(tile);
   });
 
@@ -952,7 +1025,7 @@ function renderThird(){
     if(i===8){ const cl=document.createElement('div'); cl.className='cutline'; cl.textContent='✂ qualification cut-off — top 8 advance'; wrap.appendChild(cl); }
     const d=document.createElement('div'); d.className='trow '+(i<8?'in':'out')+(r.locked?'':' proj')+(r.g===kg?' koreahl':'');
     const pts=(r.locked? r.pts.toFixed(0) : '≈'+r.pts.toFixed(1))+' pts · GD '+(r.gd>=0?'+':'')+r.gd.toFixed(r.locked?0:1);
-    const stat=r.locked?'<span class="tstat lock">✓ played</span>':'<span class="tstat play">⏳ to play</span>';
+    const stat=r.locked?'<span class="tstat lock">✓ played</span>':(groupLive(r.g)?'<span class="tstat live">🔴 live</span>':'<span class="tstat play">⏳ to play</span>');
     d.innerHTML='<div class="rk">'+(i+1)+'</div><div class="fl">'+(FLAGS[r.team]||'')+'</div>'+
       '<div class="nm">'+r.team+'<span class="gl">Grp '+r.g+'</span>'+stat+'</div>'+
       '<div class="pts">'+pts+'</div><div class="qp">'+r.q.toFixed(0)+'%</div>';
