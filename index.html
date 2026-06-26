@@ -278,8 +278,9 @@
   .boardhead{font-size:14px;color:var(--mut);margin:0 0 14px;line-height:1.65}
   .boardhead b{color:var(--txt)} .boardhead .need{color:var(--acc);font-weight:900}
   .bingo{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:12px}
-  .btile{border:1px solid var(--line);border-radius:11px;padding:13px 14px;background:var(--card2)}
-  .btile.good{box-shadow:inset 0 0 0 1px rgba(255,70,85,.45);background:rgba(255,70,85,.05)}
+  .btile{border:1px dashed var(--line);border-radius:11px;padding:13px 14px;background:transparent}   /* pending = dashed, no fill */
+  .btile.good{border-style:solid;box-shadow:inset 0 0 0 1px rgba(255,70,85,.45);background:rgba(255,70,85,.05)}   /* only a SECURED group is highlighted */
+  .btile.dead{border-style:solid;opacity:.5}
   .btile .bh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:7px}
   .btile .bg{font-weight:800;font-size:14px}
   .btile .bp{font-weight:900;font-variant-numeric:tabular-nums;font-size:14px;color:var(--mut2)}
@@ -451,7 +452,7 @@
       <div class="boardhead" id="boardHead"></div>
       <div class="bingo" id="bingo"></div>
       <div class="banked" id="boardBanked"></div>
-      <p class="seatfoot" id="boardFoot">Each card names what Korea needs from that group's <b>decisive match</b> — “seals it” = guaranteed; “not a lock” = necessary but a freak result elsewhere could still spoil it. <span style="color:var(--acc)">🔴 LIVE</span> shows the in‑play score and the odds update with it (auto‑refreshes every minute) · ⏰ upcoming · ✅ went Korea's way · ✕ didn't.</p>
+      <p class="seatfoot" id="boardFoot">Each <b>dashed</b> card is what Korea still needs from that group's <b>decisive match</b> — <b>nothing is decided until it's played</b> (“seals it” = would guarantee it; “not a lock” = necessary but a freak result elsewhere could still spoil it). A card only turns <span style="color:var(--acc)">solid red</span> once it's mathematically <b>secured</b> ✅; a faded card is mathematically <b>out</b> ✕. <span style="color:var(--acc)">🔴 LIVE</span> shows the in‑play score and updates the odds (auto‑refreshes every minute).</p>
     </div>
   </div><!-- /tabThird -->
 
@@ -985,30 +986,42 @@ function renderBoard(){
   const remaining=NONA.filter(g=>!done(g));
   const banked=NONA.filter(g=>done(g)&&prob(g)>=50);
   const needed=Math.min(remaining.length, Math.max(0, remaining.length-(7-settledAbove)));
-  const onTrack=remaining.filter(g=>prob(g)>=50).length;
+  const totalNeed=banked.length+needed;   // groups that must end with a 3rd weaker than Korea (always 4)
 
   document.getElementById('boardHead').innerHTML = remaining.length===0
     ? 'Every group is done — see Korea’s verdict in the headline above.'
-    : 'Korea finished 3rd, so it’s out of their hands. They need <span class="need">'+needed+' of '+remaining.length+'</span> remaining groups to go their way. '+
-      '✅ <b>'+banked.length+'</b> banked · ⏳ <b>'+onTrack+' of '+remaining.length+'</b> currently leaning their way.';
+    : needed===0
+    ? 'Korea finished 3rd, but enough groups have already gone their way — <b>they’re through.</b> Nothing below can change it.'
+    : 'Korea finished 3rd, so it’s out of their hands. <b>'+totalNeed+'</b> groups need to finish with a third‑placer <b>weaker than Korea</b> — '+
+      '<b>'+banked.length+'</b> already '+(banked.length===1?'has':'have')+' ✅, so Korea still needs <span class="need">'+needed+' of the '+remaining.length+'</span> undecided groups below. '+
+      'Nothing here is settled until each match is played.';
 
   host.innerHTML='';
-  remaining.map(g=>({g,p:prob(g),e:enumGroup(g)})).sort((a,b)=>b.p-a.p).forEach(o=>{
-    const g=o.g, e=o.e; const good=o.p>=50;
-    const tile=document.createElement('div'); tile.className='btile'+(good?' good':'');
-    let body;
+  // Classify each undecided group; the ONLY highlighted card is one already mathematically
+  // secured (✅) — predictions never colour a card. Order: secured → live → by kickoff → dead.
+  remaining.map(g=>{
+    const e=enumGroup(g); let kind='pending', sortk=8e15;
+    if(e){ if(e.fav>=99.5){kind='secured';sortk=-2;} else if(e.fav<=0.5){kind='dead';sortk=9e15;}
+      else if(e.decisive.m.live){kind='live';sortk=-1;}
+      else { const ms=kickoffMs(e.decisive.m.date,e.decisive.m.time); sortk=isFinite(ms)?ms:7e15; } }
+    return {g,e,kind,sortk};
+  }).sort((a,b)=>a.sortk-b.sortk).forEach(o=>{
+    const g=o.g, e=o.e;
+    const tile=document.createElement('div');
+    let body, cls='btile';
     if(!e){ body='<div class="cond">resolving…</div>'; }
-    else if(e.fav>=99.5){ tile.className='btile good'; body='<div class="cond condgood">✅ Already going Korea’s way</div>'; }
-    else if(e.fav<=0.5){ tile.className='btile'; body='<div class="cond condbad">✕ Can no longer help Korea</div>'; }
+    else if(o.kind==='secured'){ cls='btile good'; body='<div class="cond condgood">✅ Secured — this group is going Korea’s way</div>'; }
+    else if(o.kind==='dead'){ cls='btile dead'; body='<div class="cond condbad">✕ This group can no longer help Korea</div>'; }
     else {
       const d=e.decisive, m=d.m, cond=condHTML(m.a,m.b,d.hA,d.hD,d.hB);
       let stat;
       if(m.live){ stat='<span class="live">🔴 LIVE</span> '+(FLAGS[m.a]||'')+' '+m.ox+'–'+m.oy+' '+(FLAGS[m.b]||'')+(m.clock?" · "+m.clock+"'":''); }
       else { const ms=kickoffMs(m.date,m.time);
-        if(isFinite(ms)){ if(now<ms) stat='⏰ '+fmtKick(ms); else if(now<ms+150*60000) stat='<span class="live">🔴 LIVE</span> · awaiting score'; else stat='awaiting result'; }
-        else stat=(m.time||''); }
+        if(isFinite(ms)){ if(now<ms) stat='⏰ not played yet · '+fmtKick(ms); else if(now<ms+150*60000) stat='<span class="live">🔴 LIVE</span> · awaiting score'; else stat='awaiting result'; }
+        else stat='not played yet'+(m.time?' · '+m.time:''); }
       body='<div class="cond">'+cond+'</div><div class="bstat">'+stat+'</div>';
     }
+    tile.className=cls;
     tile.innerHTML='<div class="bh"><div class="bg">Group '+g+'</div></div>'+body;
     host.appendChild(tile);
   });
