@@ -252,12 +252,19 @@
   .qbig small{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut2);font-weight:700}
   .qgauge{flex:1 1 240px;height:14px;background:#0e0f12;border:1px solid var(--line);border-radius:99px;overflow:hidden;min-width:200px}
   .qgaugefill{height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .6s cubic-bezier(.2,.7,.2,1)}
-  .trow{display:grid;grid-template-columns:26px 28px 1fr auto 52px;gap:11px;align-items:center;padding:9px 8px;border-radius:9px}
+  .trow{display:grid;grid-template-columns:26px 28px 1fr auto 52px;grid-template-areas:"rk fl nm pts qp";gap:11px;align-items:center;padding:9px 8px;border-radius:9px}
   .trow:hover{background:var(--card2)}
-  .trow .rk{color:var(--mut2);font-weight:800;text-align:right;font-variant-numeric:tabular-nums;font-size:13px}
-  .trow .fl{font-size:20px;text-align:center}
-  .trow .nm{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .trow .rk{grid-area:rk;color:var(--mut2);font-weight:800;text-align:right;font-variant-numeric:tabular-nums;font-size:13px}
+  .trow .fl{grid-area:fl;font-size:20px;text-align:center}
+  .trow .nm{grid-area:nm} .trow .pts{grid-area:pts} .trow .qp{grid-area:qp}
+  @media(max-width:560px){
+    .trow{grid-template-columns:20px 24px 1fr 44px;grid-template-areas:"rk fl nm qp" "rk fl pts qp";gap:3px 8px}
+    .trow .pts{text-align:left}
+  }
+  .trow .nm{font-weight:600;font-size:14px;min-width:0}
+  .trow .nm .nml{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .trow .nm .gl{color:var(--mut2);font-weight:600;font-size:11px;margin-left:6px}
+  .trow .nm .ktx{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;font-size:11px;color:var(--acc2);margin-top:3px;font-style:normal}
   .trow .pts{color:var(--mut);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
   .trow .qp{font-weight:900;font-variant-numeric:tabular-nums;font-size:14px;text-align:right}
   .trow.in .qp{color:var(--acc)} .trow.out{opacity:.62} .trow.out .qp{color:var(--mut2)}
@@ -1076,13 +1083,25 @@ function renderThird(){
         : tt('✂ top 8 advance — '+nPlayG+' groups still mid-way, the order can still shift',
              '✂ 상위 8팀 진출 — 진행 중 '+nPlayG+'개 조로 순위가 바뀔 수 있음');
       wrap.appendChild(cl); }
+    // this 3rd-placer's own remaining (or live) match, and WHEN it kicks off
+    let stat, when='';
+    if(r.done){ stat='<span class="tstat lock">'+tt('✓ done','✓ 종료')+'</span>'; }
+    else {
+      const lm=(LIVE[r.g]||[]).find(m=>m[0]===r.team||m[1]===r.team);
+      const rm=(FIXTURES[r.g]||[]).find(m=>m[0]===r.team||m[1]===r.team);
+      if(lm){ const opp=lm[0]===r.team?lm[1]:lm[0], sc=(lm[0]===r.team?lm[2]+'–'+lm[3]:lm[3]+'–'+lm[2]);
+        stat='<span class="tstat live">'+tt('🔴 live','🔴 라이브')+'</span>';
+        when='vs '+(FLAGS[opp]||'')+' '+TN(opp)+' · '+sc+(lm[4]?" "+lm[4]+"'":''); }
+      else if(rm){ const opp=rm[0]===r.team?rm[1]:rm[0], ms=kickoffMs(rm[2],rm[3]);
+        stat='<span class="tstat play">'+tt('1 left','1경기 남음')+'</span>';
+        when=tt('next: ','다음: ')+'vs '+(FLAGS[opp]||'')+' '+TN(opp)+' · '+(isFinite(ms)?fmtKick(ms):(rm[3]||'')); }
+      else { stat='<span class="tstat play">'+tt(r.left+' left',r.left+'경기 남음')+'</span>'; }
+    }
     const d=document.createElement('div'); d.className='trow '+(i<8?'in':'out')+(r.done?'':' proj')+(r.g===kg?' koreahl':'');
     const pts=r.pts+tt(' pts · GD ',' 점 · 골득실 ')+(r.gd>=0?'+':'')+r.gd;
-    const stat=r.done?'<span class="tstat lock">'+tt('✓ done','✓ 종료')+'</span>'
-      :(r.live?'<span class="tstat live">'+tt('🔴 live','🔴 라이브')+'</span>'
-        :'<span class="tstat play">'+tt(r.left+' left',r.left+'경기 남음')+'</span>');
     d.innerHTML='<div class="rk">'+(i+1)+'</div><div class="fl">'+(FLAGS[r.team]||'')+'</div>'+
-      '<div class="nm">'+TN(r.team)+'<span class="gl">'+tt('Grp ','그룹 ')+r.g+'</span>'+stat+'</div>'+
+      '<div class="nm"><span class="nml">'+TN(r.team)+'<span class="gl">'+tt('Grp ','그룹 ')+r.g+'</span>'+stat+'</span>'+
+        (when?'<span class="ktx">'+when+'</span>':'')+'</div>'+
       '<div class="pts">'+pts+'</div><div class="qp">'+r.q.toFixed(0)+'%</div>';
     wrap.appendChild(d);
   });
