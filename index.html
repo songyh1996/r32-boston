@@ -264,6 +264,8 @@
   .trow.koreahl{background:rgba(255,70,85,.10);box-shadow:inset 0 0 0 1px rgba(255,70,85,.4);opacity:1}
   .cutline{display:flex;align-items:center;gap:10px;margin:9px 2px;color:var(--acc2);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
   .cutline::before,.cutline::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--acc2),transparent)}
+  .cutline.alive{color:var(--acc);white-space:normal;text-align:center;letter-spacing:.01em;line-height:1.5;text-transform:none;font-size:11.5px}
+  .cutline.alive::before,.cutline.alive::after{flex:0 0 16px;background:linear-gradient(90deg,transparent,var(--acc),transparent)}
   .qcallout{background:rgba(255,138,60,.07);border:1px solid rgba(255,138,60,.28);border-radius:12px;padding:12px 15px;margin:0 0 14px;color:var(--mut);font-size:13px;line-height:1.55}
   .qcallout b{color:var(--acc2)}
   .tstat{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:99px;margin-left:8px;vertical-align:1px;white-space:nowrap}
@@ -1062,7 +1064,15 @@ function renderThird(){
 
   const wrap=document.getElementById('thirdRace'); wrap.innerHTML='';
   rows.forEach((r,i)=>{
-    if(i===8){ const cl=document.createElement('div'); cl.className='cutline'; cl.textContent=tt('✂ qualification cut-off — top 8 advance','✂ 진출 커트라인 — 상위 8팀'); wrap.appendChild(cl); }
+    if(i===8){ const cl=document.createElement('div'); cl.className='cutline'+(!koIn&&nPlayG>0?' alive':'');
+      cl.textContent = nPlayG===0
+        ? tt('✂ top 8 advance — final','✂ 상위 8팀 진출 — 최종')
+        : !koIn
+        ? tt('✂ top 8 advance · Korea is '+koRank+'th now but NOT out — the “to play” teams above can still slip below it ('+koQ.toFixed(0)+'%)',
+             '✂ 상위 8팀 진출 · 한국 현재 '+koRank+'위(컷 밖)지만 탈락 아님 — 위쪽 ‘경기 전’ 팀이 미끄러지면 진입합니다 ('+koQ.toFixed(0)+'%)')
+        : tt('✂ top 8 advance — the order still shifts as the “to play” teams finish',
+             '✂ 상위 8팀 진출 — ‘경기 전’ 팀들이 끝나면 순위가 바뀝니다');
+      wrap.appendChild(cl); }
     const d=document.createElement('div'); d.className='trow '+(i<8?'in':'out')+(r.locked?'':' proj')+(r.g===kg?' koreahl':'');
     const pts=(r.locked? r.pts.toFixed(0) : '≈'+r.pts.toFixed(1))+tt(' pts · GD ',' 점 · 골득실 ')+(r.gd>=0?'+':'')+r.gd.toFixed(r.locked?0:1);
     const stat=r.locked?'<span class="tstat lock">'+tt('✓ played','✓ 종료')+'</span>':(groupLive(r.g)?'<span class="tstat live">'+tt('🔴 live','🔴 라이브')+'</span>':'<span class="tstat play">'+tt('⏳ to play','⏳ 경기 전')+'</span>');
