@@ -451,7 +451,7 @@
       <div class="boardhead" id="boardHead"></div>
       <div class="bingo" id="bingo"></div>
       <div class="banked" id="boardBanked"></div>
-      <p class="seatfoot" id="boardFoot">Each card names what Korea needs from that group's <b>decisive match</b> — “seals it” means it's guaranteed enough; “not a lock” means it's necessary but a freak result elsewhere could still spoil it. ⏰ upcoming · <span style="color:var(--acc)">🔴 LIVE</span> in progress (live scores aren't in the free feed, so there's no scoreline — odds refresh when it ends) · ✅ went Korea's way · ✕ didn't.</p>
+      <p class="seatfoot" id="boardFoot">Each card names what Korea needs from that group's <b>decisive match</b> — “seals it” = guaranteed; “not a lock” = necessary but a freak result elsewhere could still spoil it. <span style="color:var(--acc)">🔴 LIVE</span> shows the in‑play score and the odds update with it (auto‑refreshes every minute) · ⏰ upcoming · ✅ went Korea's way · ✕ didn't.</p>
     </div>
   </div><!-- /tabThird -->
 
@@ -474,8 +474,9 @@
       </ul>
       <h4>Real results (live)</h4>
       <ul>
-        <li>Completed group-stage matches are <b>played</b> to their actual scorelines; only the remaining fixtures are simulated. Results come from <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a> and are listed in the “Real results baked in” panel.</li>
-        <li>“↻ Refresh from live data” pulls the latest scores in your browser (matches dated on/before today). Untick “Lock in real results” to see the pre-tournament forecast instead.</li>
+        <li>Completed group-stage matches are <b>played</b> to their actual scorelines; only the remaining fixtures are simulated. Finished results come from <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a> and are listed in the “Real results baked in” panel.</li>
+        <li><b>Live, in‑play scores</b> are layered on top from ESPN's public scoreboard. A match being played right now keeps its current score and only the <i>remaining</i> minutes are simulated, so every probability — Korea's R32 odds, the third‑place race and the “what needs to happen” board — moves with the live action. It auto‑refreshes every minute.</li>
+        <li>“↻ Refresh from live data” pulls the latest finished + in‑play scores in your browser. Untick “Lock in real results” to see the pre-tournament forecast instead.</li>
         <li>Ratings stay at their pre-tournament value for the matches still to be played — a real 7–1 already reshapes goal difference and the third-place race without us second-guessing each team's form.</li>
       </ul>
       <h4>Honest caveats</h4>
@@ -631,6 +632,32 @@ function simMatch(ra,rb){
   if(la<0.18)la=0.18; if(lb<0.18)lb=0.18;
   return [poisson(la),poisson(lb)];
 }
+/* ---------------------- LIVE SCORES (ESPN) ---------------------- */
+// In-play + just-finished scores from ESPN's public scoreboard (no API key, CORS-enabled,
+// so it works straight from the browser). LIVE[group] = [[teamA,teamB,goalsA,goalsB,minute],…]
+let LIVE = {};
+const ESPN_SB = d => 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates='+d;
+const _stripD = s => (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const _nk = s => _stripD((s||'').toLowerCase()).replace(/[^a-z0-9]/g,'');
+const ESPN_ALIAS = {  // ESPN spelling (normalized: lower-case, accents/punctuation stripped) -> ours
+  czechrepublic:'Czechia', turkey:'Türkiye', usa:'United States', unitedstatesofamerica:'United States',
+  republicofkorea:'South Korea', korearepublic:'South Korea', cotedivoire:'Ivory Coast',
+  bosniaandherzegovina:'Bosnia & Herzegovina', drcongo:'DR Congo', congodr:'DR Congo',
+  democraticrepublicofthecongo:'DR Congo', caboverde:'Cape Verde' };
+const BYNORM = {}; for(const t in RATINGS) BYNORM[_nk(t)]=t;   // auto-match by normalized name
+function espnTeam(name){ const k=_nk(name); return ESPN_ALIAS[k]||BYNORM[k]||null; }
+// A live match starts from its current score; only the remaining minutes are simulated.
+function liveScore(a,b){
+  const g=GROUP_OF[a], arr=(g&&LIVE[g])||[];
+  for(const m of arr){
+    let cx,cy; if(m[0]===a&&m[1]===b){cx=m[2];cy=m[3];} else if(m[0]===b&&m[1]===a){cx=m[3];cy=m[2];} else continue;
+    const s=(RATINGS[a]-RATINGS[b])/DIV; let la=(TOTAL+s)/2, lb=(TOTAL-s)/2;
+    if(la<0.18)la=0.18; if(lb<0.18)lb=0.18;
+    const f=Math.max(0,Math.min(1,(90-(m[4]||0))/90));   // share of the match still to play
+    return [cx+poisson(la*f), cy+poisson(lb*f)];
+  }
+  return null;
+}
 function lockedScore(played,a,b){
   if(!played) return null;
   for(const m of played){
@@ -644,7 +671,7 @@ function simGroup(teams,played){
   for(const t of teams) st[t]={team:t,pts:0,gf:0,ga:0,gd:0,h2h:{},rk:Math.random()};
   for(let i=0;i<4;i++) for(let j=i+1;j<4;j++){
     const a=teams[i],b=teams[j];
-    let r=lockedScore(played,a,b); if(!r) r=simMatch(RATINGS[a],RATINGS[b]);
+    let r=lockedScore(played,a,b); if(!r&&lockResults) r=liveScore(a,b); if(!r) r=simMatch(RATINGS[a],RATINGS[b]);
     const ga=r[0],gb=r[1];
     st[a].gf+=ga;st[a].ga+=gb;st[b].gf+=gb;st[b].ga+=ga;
     if(ga>gb){st[a].pts+=3;st[a].h2h[b]=3;st[b].h2h[a]=0;}
@@ -769,7 +796,8 @@ function run(){
     if(acc.n<total){ setTimeout(step,0); }
     else{
       const ms=(performance.now()-t0).toFixed(0);
-      document.getElementById('status').textContent='50,000 simulations · real results played through '+RESULTS_DATE+' · '+ms+' ms.';
+      const liveN=Object.values(LIVE).reduce((s,a)=>s+a.length,0);
+      document.getElementById('status').textContent='50,000 simulations · played through '+RESULTS_DATE+(liveN?' · 🔴 '+liveN+' live now':'')+' · '+ms+' ms.';
       if(btn) btn.disabled=false;
       render();
     }
@@ -868,7 +896,7 @@ function kickoffMs(date,time){
   return Date.parse(date+'T'+mt[1].padStart(2,'0')+':'+mt[2]+':00'+sign+oh+':00');
 }
 function fmtKick(ms){ try{ return new Date(ms).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }catch(e){ return ''; } }
-function groupLive(g){ const now=Date.now(); return (FIXTURES[g]||[]).some(m=>{const ms=kickoffMs(m[2],m[3]); return isFinite(ms)&&now>=ms&&now<ms+115*60000;}); }
+function groupLive(g){ if((LIVE[g]||[]).length) return true; const now=Date.now(); return (FIXTURES[g]||[]).some(m=>{const ms=kickoffMs(m[2],m[3]); return isFinite(ms)&&now>=ms&&now<ms+150*60000;}); }
 // Standings from the played matches only (no simulation).
 function baseStandObj(g){
   const st={}; GROUPS[g].forEach(t=>st[t]={pts:0,gf:0,ga:0});
@@ -881,7 +909,15 @@ function baseStandObj(g){
 function enumGroup(g){
   const teams=GROUPS[g], played=lockResults?(PLAYED[g]||[]):[];
   const has=(a,b)=>played.some(m=>(m[0]===a&&m[1]===b)||(m[0]===b&&m[1]===a));
-  const rem=(FIXTURES[g]||[]).filter(m=>!has(m[0],m[1]));
+  const live=(lockResults?(LIVE[g]||[]):[]).filter(m=>!has(m[0],m[1]));
+  const livePair=(a,b)=>live.some(m=>(m[0]===a&&m[1]===b)||(m[0]===b&&m[1]===a));
+  // Each remaining match keeps an offset = goals already on the board (live), then we
+  // enumerate the goals still to come on top of it. Scheduled matches start from 0–0.
+  const rem=[
+    ...live.map(m=>({a:m[0],b:m[1],ox:m[2],oy:m[3],live:true,clock:m[4],date:'',time:''})),
+    ...(FIXTURES[g]||[]).filter(m=>!has(m[0],m[1])&&!livePair(m[0],m[1]))
+        .map(m=>({a:m[0],b:m[1],ox:0,oy:0,live:false,clock:null,date:m[2],time:m[3]}))
+  ];
   if(!rem.length) return null;
   const ka=baseStandObj('A')['South Korea']; const koP=ka.pts, koGd=ka.gf-ka.ga, koGf=ka.gf;
   const base=baseStandObj(g);
@@ -890,13 +926,13 @@ function enumGroup(g){
   let fav=0,tot=0;
   function evalSc(sc){
     const st={}; teams.forEach(t=>st[t]={pts:base[t].pts,gf:base[t].gf,ga:base[t].ga});
-    rem.forEach((m,mi)=>{const x=sc[mi][0],y=sc[mi][1]; st[m[0]].gf+=x;st[m[0]].ga+=y;st[m[1]].gf+=y;st[m[1]].ga+=x;
-      if(x>y)st[m[0]].pts+=3; else if(y>x)st[m[1]].pts+=3; else {st[m[0]].pts++;st[m[1]].pts++;}});
+    rem.forEach((m,mi)=>{const x=m.ox+sc[mi][0],y=m.oy+sc[mi][1]; st[m.a].gf+=x;st[m.a].ga+=y;st[m.b].gf+=y;st[m.b].ga+=x;
+      if(x>y)st[m.a].pts+=3; else if(y>x)st[m.b].pts+=3; else {st[m.a].pts++;st[m.b].pts++;}});
     const rows=teams.map(t=>({pts:st[t].pts,gd:st[t].gf-st[t].ga,gf:st[t].gf})).sort((p,q)=>q.pts-p.pts||q.gd-p.gd||q.gf-p.gf);
     const th=rows[2];
     const w = th.pts<koP || (th.pts===koP&&th.gd<koGd) || (th.pts===koP&&th.gd===koGd&&th.gf<koGf);
     tot++; if(w)fav++;
-    rem.forEach((m,mi)=>{const x=sc[mi][0],y=sc[mi][1]; const lab=x>y?'w0':(y>x?'w1':'draw'); tally[mi][lab][1]++; if(w)tally[mi][lab][0]++;});
+    rem.forEach((m,mi)=>{const x=m.ox+sc[mi][0],y=m.oy+sc[mi][1]; const lab=x>y?'w0':(y>x?'w1':'draw'); tally[mi][lab][1]++; if(w)tally[mi][lab][0]++;});
   }
   (function loop(mi,a){ if(mi===rem.length){evalSc(a);return;} for(const s of SS){a.push(s);loop(mi+1,a);a.pop();} })(0,[]);
   const v=rem.map((m,mi)=>{const t=tally[mi],h=r=>t[r][1]?100*t[r][0]/t[r][1]:0;
@@ -965,13 +1001,15 @@ function renderBoard(){
     else if(e.fav>=99.5){ tile.className='btile good'; body='<div class="cond condgood">✅ Already going Korea’s way</div>'; }
     else if(e.fav<=0.5){ tile.className='btile'; body='<div class="cond condbad">✕ Can no longer help Korea</div>'; }
     else {
-      const d=e.decisive, m=d.m, cond=condHTML(m[0],m[1],d.hA,d.hD,d.hB);
-      const ms=kickoffMs(m[2],m[3]); let stat;
-      if(isFinite(ms)){ if(now<ms) stat='⏰ '+fmtKick(ms); else if(now<ms+115*60000) stat='<span class="live">🔴 LIVE</span>'; else stat='awaiting result'; }
-      else stat=(m[3]||'');
+      const d=e.decisive, m=d.m, cond=condHTML(m.a,m.b,d.hA,d.hD,d.hB);
+      let stat;
+      if(m.live){ stat='<span class="live">🔴 LIVE</span> '+(FLAGS[m.a]||'')+' '+m.ox+'–'+m.oy+' '+(FLAGS[m.b]||'')+(m.clock?" · "+m.clock+"'":''); }
+      else { const ms=kickoffMs(m.date,m.time);
+        if(isFinite(ms)){ if(now<ms) stat='⏰ '+fmtKick(ms); else if(now<ms+150*60000) stat='<span class="live">🔴 LIVE</span> · awaiting score'; else stat='awaiting result'; }
+        else stat=(m.time||''); }
       body='<div class="cond">'+cond+'</div><div class="bstat">'+stat+'</div>';
     }
-    tile.innerHTML='<div class="bh"><div class="bg">Group '+g+'</div><div class="bp">'+o.p.toFixed(0)+'%</div></div>'+body;
+    tile.innerHTML='<div class="bh"><div class="bg">Group '+g+'</div></div>'+body;
     host.appendChild(tile);
   });
 
@@ -1189,6 +1227,50 @@ async function refreshLive(){
   }finally{ btn.disabled=false; }
 }
 
+// Overlay in-play + just-finished scores from ESPN on top of the openfootball baseline.
+// Finished -> locked into PLAYED; in-progress -> LIVE (shown with score, fed into the sim).
+async function fetchLiveScores(){
+  const st=document.getElementById('status');
+  const dstr=off=>{ const d=new Date(Date.now()+off*86400000);
+    return ''+d.getUTCFullYear()+String(d.getUTCMonth()+1).padStart(2,'0')+String(d.getUTCDate()).padStart(2,'0'); };
+  const live={}, fin=[]; let seen=0;
+  for(const d of [dstr(-1),dstr(0),dstr(1)]){
+    try{
+      const res=await fetch(ESPN_SB(d),{cache:'no-store'}); if(!res.ok) continue;
+      const data=await res.json();
+      (data.events||[]).forEach(ev=>{
+        const comp=(ev.competitions||[])[0]; if(!comp) return;
+        const cs=comp.competitors||[]; if(cs.length!==2) return;
+        const home=cs.find(c=>c.homeAway==='home')||cs[0], away=cs.find(c=>c.homeAway==='away')||cs[1];
+        const a=espnTeam((home.team||{}).displayName||(home.team||{}).name||(home.team||{}).location);
+        const b=espnTeam((away.team||{}).displayName||(away.team||{}).name||(away.team||{}).location);
+        if(!a||!b||a===b) return; const g=GROUP_OF[a]; if(!g||GROUP_OF[b]!==g) return;   // group-stage pair only
+        const ga=parseInt(home.score,10), gb=parseInt(away.score,10);
+        const state=(((comp.status||{}).type||{}).state)||'';
+        if(state==='post'){ fin.push([g,a,b,isFinite(ga)?ga:0,isFinite(gb)?gb:0]); seen++; }
+        else if(state==='in'){
+          const dc=''+((comp.status||{}).displayClock||((comp.status||{}).type||{}).shortDetail||'');
+          const mm=dc.match(/(\d{1,3})/); const mn=mm?Math.min(95,+mm[1]):45;
+          const ex=(live[g]=live[g]||[]);
+          if(!ex.some(m=>(m[0]===a&&m[1]===b)||(m[0]===b&&m[1]===a))){ ex.push([a,b,isFinite(ga)?ga:0,isFinite(gb)?gb:0,mn]); seen++; }
+        }
+      });
+    }catch(e){ /* skip this date */ }
+  }
+  if(!seen) return false;
+  const pairIn=(arr,a,b)=>(arr||[]).some(m=>(m[0]===a&&m[1]===b)||(m[0]===b&&m[1]===a));
+  const dropPair=(arr,a,b)=>{ if(arr) for(let i=arr.length-1;i>=0;i--){const m=arr[i]; if((m[0]===a&&m[1]===b)||(m[0]===b&&m[1]===a)) arr.splice(i,1);} };
+  fin.forEach(([g,a,b,x,y])=>{ dropPair(FIXTURES[g],a,b); dropPair(PLAYED[g],a,b); (PLAYED[g]=PLAYED[g]||[]).push([a,b,x,y]); });
+  LIVE={};
+  for(const g in live){
+    const arr=live[g].filter(m=>!pairIn(PLAYED[g],m[0],m[1]));   // a finished match isn't still live
+    if(arr.length){ LIVE[g]=arr; arr.forEach(m=>dropPair(FIXTURES[g],m[0],m[1])); }   // …and isn't "to play"
+  }
+  renderResultsPanel();
+  run();
+  return true;
+}
+
 function buildFocusSelect(){
   const sel=document.getElementById('focusSel'); if(!sel) return;
   let html='';
@@ -1212,13 +1294,16 @@ function setupTabs(){
 }
 
 /* ----------------------------- INIT ----------------------------- */
-document.getElementById('liveBtn').addEventListener('click',refreshLive);
+// Refresh = openfootball baseline (finished results) then ESPN overlay (live + just-finished).
+const refreshAll=()=>refreshLive().then(fetchLiveScores).catch(()=>{});
+document.getElementById('liveBtn').addEventListener('click',refreshAll);
 buildAllRatings();
 buildFocusSelect();
 setupTabs();
 renderResultsPanel();
 run();          // instant render from the bundled snapshot
-refreshLive();  // then always pull the latest live results (so a reload is never stale)
+refreshAll();   // then always pull the latest results (so a reload is never stale)
+setInterval(fetchLiveScores, 60000);   // keep live scores ticking while you watch
 </script>
 </body>
 </html>

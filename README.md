@@ -55,6 +55,10 @@ It is a forward Monte Carlo simulation, run entirely in your browser:
    to their actual scorelines (fetched from
    [openfootball/worldcup.json](https://github.com/openfootball/worldcup.json)); only the
    not‑yet‑played fixtures are simulated.
+   **Live, in‑play scores** are layered on top from ESPN's public scoreboard (no API key,
+   fetched client‑side, auto‑refreshed every minute): a match in progress keeps its current
+   score and only the *remaining* minutes are simulated, so every probability moves with the
+   live action.
 3. **Group stage.** All 12 groups are completed; teams are ranked by
    points → goal difference → goals scored (head‑to‑head/fair‑play tiebreakers are simplified).
 4. **Round of 32.** 32 teams advance: 12 winners + 12 runners‑up + the **8 best third‑placed**
@@ -92,7 +96,8 @@ played use the pre‑tournament strength ratings (which you can nudge and re‑r
 
 - FIFA World Cup 2026 group draw & Round‑of‑32 format (FIFA / ESPN / NBC Sports / Sky Sports).
 - Boston (Gillette Stadium) hosts **Match 74** of the Round of 32 on June 29, 2026 (Gillette Stadium / CBS Boston / NESN).
-- Live group‑stage results: [openfootball/worldcup.json](https://github.com/openfootball/worldcup.json) (public‑domain).
+- Finished group‑stage results: [openfootball/worldcup.json](https://github.com/openfootball/worldcup.json) (public‑domain).
+- Live, in‑play scores: ESPN public soccer scoreboard API (`site.api.espn.com`, no key, fetched client‑side).
 - Team strengths ≈ FIFA World Ranking points, June 2026 (FIFA / ESPN).
 
 *Built as an interactive World Cup explainer. The simulation runs client‑side; no data leaves your browser.*
