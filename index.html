@@ -986,7 +986,7 @@ function renderBoard(){
     ? '<b>Every group is done.</b>'
     : needed===0
     ? '✅ <b>Korea is through</b> — enough groups already went their way.'
-    : 'Korea needs <span class="need">'+needed+' of the '+remaining.length+'</span> groups still in play to go their way · ✅ <b>'+banked.length+'</b> already banked.';
+    : 'Korea needs <span class="need">'+needed+' of the '+remaining.length+'</span> groups still in play to go their way · ✅ <b>'+banked.length+'</b> already satisfied.';
 
   // Build ONE consistent grid of blocks. Cards in play show what's needed; ✅ blocks are
   // events already satisfied (a group that finished with a 3rd-placer weaker than Korea, or
@@ -996,7 +996,7 @@ function renderBoard(){
     if(done(g)){
       if(prob(g)>=50){ const t=modalThird(g);
         cards.push({g, sortk:9e15, cls:'btile good',
-          body:'<div class="cond condgood">✅ '+(FLAGS[t]||'')+' '+t+' finished below Korea</div><div class="bstat">banked</div>'}); }
+          body:'<div class="cond condgood">✅ '+(FLAGS[t]||'')+' '+t+' finished below Korea</div><div class="bstat">Satisfied</div>'}); }
       return;   // group decided against Korea -> drop
     }
     const e=enumGroup(g); if(!e) return;
