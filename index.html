@@ -996,11 +996,11 @@ function renderBoard(){
   const cards=[];
   NONA.forEach(g=>{
     if(done(g)){
-      const t=modalThird(g);
+      const t=modalThird(g), sj=_jong(TN(t))?'이':'가';
       if(prob(g)>=50) cards.push({g, sortk:9e15, cls:'btile good',
-        body:'<div class="cond condgood">✅ '+(FLAGS[t]||'')+' '+TN(t)+tt(' finished below Korea',(_jong(TN(t))?'이':'가')+' 한국보다 아래로 마감')+'</div><div class="bstat">'+tt('Satisfied','충족')+'</div>'});
+        body:'<div class="cond condgood">'+tt('✅ '+(FLAGS[t]||'')+' '+TN(t)+' finished behind Korea','✅ '+(FLAGS[t]||'')+' '+TN(t)+sj+' 한국에 뒤짐')+'</div><div class="bstat">'+tt('Satisfied','충족')+'</div>'});
       else cards.push({g, sortk:9.5e15, cls:'btile bad',
-        body:'<div class="cond">✕ '+(FLAGS[t]||'')+' '+TN(t)+tt(' finished above Korea',(_jong(TN(t))?'이':'가')+' 한국보다 위로 마감')+'</div><div class="bstat">'+tt('Not satisfied','불충족')+'</div>'});
+        body:'<div class="cond">'+tt('✕ '+(FLAGS[t]||'')+' '+TN(t)+' finished ahead of Korea','✕ '+(FLAGS[t]||'')+' '+TN(t)+sj+' 한국을 앞섬')+'</div><div class="bstat">'+tt('Not satisfied','불충족')+'</div>'});
       return;
     }
     const e=enumGroup(g); if(!e) return;
