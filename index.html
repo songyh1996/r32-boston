@@ -273,6 +273,28 @@
   .trow.proj .fl{opacity:.8}
   .trow.proj .pts{font-style:italic}
 
+  /* WHAT-NEEDS-TO-HAPPEN BINGO BOARD */
+  .boardhead{font-size:14px;color:var(--mut);margin:0 0 14px;line-height:1.65}
+  .boardhead b{color:var(--txt)} .boardhead .need{color:var(--acc);font-weight:900}
+  .bingo{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:12px}
+  .btile{border:1px solid var(--line);border-radius:11px;padding:13px 14px;background:var(--card2)}
+  .btile.good{box-shadow:inset 0 0 0 1px rgba(255,70,85,.45);background:rgba(255,70,85,.05)}
+  .btile .bh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:7px}
+  .btile .bg{font-weight:800;font-size:14px}
+  .btile .bp{font-weight:900;font-variant-numeric:tabular-nums;font-size:15px;color:var(--mut2)}
+  .btile.good .bp{color:var(--acc)}
+  .btile .proj{font-size:11.5px;color:var(--mut2);margin-bottom:9px;line-height:1.4}
+  .bm{display:flex;align-items:center;gap:6px;font-size:12.5px;padding:3px 0;color:var(--mut)}
+  .bm .fl{font-size:15px} .bm .vs{color:var(--mut2);font-size:10px;font-weight:700;margin:0 1px}
+  .bm .when{margin-left:auto;color:var(--mut2);font-size:11px;white-space:nowrap}
+  .bm .live{margin-left:auto;color:#fff;background:var(--acc);font-size:10px;font-weight:800;letter-spacing:.04em;
+    padding:1px 8px;border-radius:99px;animation:pulse 1.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+  .banked{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:15px}
+  .banked .blab{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut2);font-weight:800;margin-right:4px}
+  .bchip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;padding:3px 9px;border-radius:99px;border:1px solid var(--line);color:var(--mut2)}
+  .bchip.y{color:#ff8087;border-color:rgba(255,70,85,.3);background:rgba(255,70,85,.06)}
+
   footer{margin-top:40px;color:var(--mut2);font-size:12.5px;text-align:center;line-height:1.7}
   footer a{color:var(--mut)}
   .pill{display:inline-block;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:3px 10px;margin:3px;font-size:12px;color:var(--mut)}
@@ -293,13 +315,13 @@
       <button class="runbtn" id="liveBtn">↻ Refresh from live data</button>
       <div class="grow">
         <div class="progwrap"><div class="progbar" id="prog"></div></div>
-        <div class="status" id="status">50,000 simulations · live results locked.</div>
+        <div class="status" id="status">50,000 simulations · real results played.</div>
       </div>
     </div>
     <details class="resinline" id="resultsBox">
       <summary>✅ Real results baked in — <span id="resultsSummary">live group-stage results</span></summary>
       <div class="body">
-        <p>These completed matches are <b>locked</b> in every simulation; only the remaining fixtures are simulated. Source:
+        <p>These completed matches are <b>played</b> in every simulation; only the remaining fixtures are simulated. Source:
           <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a>.
           Hit <b>Refresh from live data</b> to pull the latest scores.</p>
         <div class="resgrid" id="resGrid"></div>
@@ -415,6 +437,14 @@
       <p class="seatfoot" id="koNote">Calculating Korea's third-place qualification odds…</p>
     </div>
 
+    <h2 class="sec">🎯 What needs to happen — the bingo board</h2>
+    <div class="panel" style="padding:18px 20px">
+      <div class="boardhead" id="boardHead"></div>
+      <div class="bingo" id="bingo"></div>
+      <div class="banked" id="boardBanked"></div>
+      <p class="seatfoot" id="boardFoot">“%” = chance that group ends with a 3rd‑placer <b>weaker than Korea</b> (so it helps). Live scores aren't in the free data feed, so an in‑progress match shows <span style="color:var(--acc)">🔴 LIVE</span> without a score — odds update when it finishes (hit Refresh).</p>
+    </div>
+
     <h2 class="sec">The third-place race — 8 of 12 qualify</h2>
     <div class="panel" style="padding:16px 18px">
       <div class="qcallout" id="koCallout"></div>
@@ -441,9 +471,9 @@
       </ul>
       <h4>Real results (live)</h4>
       <ul>
-        <li>Completed group-stage matches are <b>locked</b> to their actual scorelines; only the remaining fixtures are simulated. Results come from <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a> and are listed in the “Real results baked in” panel.</li>
+        <li>Completed group-stage matches are <b>played</b> to their actual scorelines; only the remaining fixtures are simulated. Results come from <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a> and are listed in the “Real results baked in” panel.</li>
         <li>“↻ Refresh from live data” pulls the latest scores in your browser (matches dated on/before today). Untick “Lock in real results” to see the pre-tournament forecast instead.</li>
-        <li>Ratings stay at their pre-tournament value for the matches still to be played — a locked 7–1 already reshapes goal difference and the third-place race without us second-guessing each team's form.</li>
+        <li>Ratings stay at their pre-tournament value for the matches still to be played — a real 7–1 already reshapes goal difference and the third-place race without us second-guessing each team's form.</li>
       </ul>
       <h4>Honest caveats</h4>
       <ul>
@@ -520,7 +550,7 @@ const FLAGS = {
   "England":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","Croatia":"🇭🇷","Panama":"🇵🇦","Ghana":"🇬🇭"
 };
 // Real group-stage results, fetched from openfootball/worldcup.json.
-// Matches already played (locked); the rest are simulated. [team1, team2, goals1, goals2]
+// Matches already played; the rest are simulated. [team1, team2, goals1, goals2]
 let RESULTS_DATE = "2026-06-25";   // snapshot fallback; auto-refreshed from live data on every load
 const PLAYED = {
   A: [["Mexico","South Africa",2,0], ["South Korea","Czechia",2,1], ["Czechia","South Africa",1,1], ["Mexico","South Korea",1,0], ["Czechia","Mexico",0,3], ["South Africa","South Korea",1,0]],
@@ -535,6 +565,15 @@ const PLAYED = {
   J: [["Argentina","Algeria",3,0], ["Austria","Jordan",3,1], ["Argentina","Austria",2,0], ["Jordan","Algeria",1,2]],
   K: [["Portugal","DR Congo",1,1], ["Uzbekistan","Colombia",1,3], ["Portugal","Uzbekistan",5,0], ["Colombia","DR Congo",1,0]],
   L: [["England","Croatia",4,2], ["Ghana","Panama",1,0], ["England","Ghana",0,0], ["Panama","Croatia",0,1]]
+};
+// Remaining (unplayed) fixtures with kickoff times — fallback; refreshed from live data.
+let FIXTURES = {
+  G: [["Egypt","Iran","2026-06-26","20:00 UTC-7"], ["New Zealand","Belgium","2026-06-26","20:00 UTC-7"]],
+  H: [["Cape Verde","Saudi Arabia","2026-06-26","19:00 UTC-5"], ["Uruguay","Spain","2026-06-26","18:00 UTC-6"]],
+  I: [["Norway","France","2026-06-26","15:00 UTC-4"], ["Senegal","Iraq","2026-06-26","15:00 UTC-4"]],
+  J: [["Algeria","Austria","2026-06-27","21:00 UTC-5"], ["Jordan","Argentina","2026-06-27","21:00 UTC-5"]],
+  K: [["Colombia","Portugal","2026-06-27","19:30 UTC-4"], ["DR Congo","Uzbekistan","2026-06-27","19:30 UTC-4"]],
+  L: [["Panama","England","2026-06-27","17:00 UTC-4"], ["Croatia","Ghana","2026-06-27","17:00 UTC-4"]]
 };
 const LIVE_URL = "https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json";
 
@@ -648,7 +687,8 @@ function freshAcc(){
   return {n:0, winE:Object.assign({},z), third:Object.assign({},z),
           grp:{A:0,B:0,C:0,D:0,F:0}, pair:{},
           fFinish:[0,0,0,0], fRows:{},      // focus-team finish + (match|opponent) counts
-          tQual:{}, tTeam:{}, tPts:{}, tGd:{}, koR32:0};   // third-place race + Korea reach count
+          tQual:{}, tTeam:{}, tPts:{}, tGd:{}, koR32:0,    // third-place race + Korea reach count
+          belowKor:{}};                     // per-group: times that group's 3rd ranks below Korea
 }
 function simOnce(a){
   const standings={}, thirds=[];
@@ -667,6 +707,13 @@ function simOnce(a){
     (a.tGd[g]=a.tGd[g]||{})[t.team]=(a.tGd[g][t.team]||0)+t.gd;
   });
   qg.forEach(g=>{ a.tQual[g]=(a.tQual[g]||0)+1; });
+
+  // ---- "What needs to happen": does each group's 3rd rank below Korea? ----
+  const k3=standings['A'][2], kPts=k3.pts, kGd=k3.gd, kGf=k3.gf;
+  for(const g in GROUPS){ if(g==='A') continue;
+    const t=standings[g][2];
+    if(t.pts<kPts || (t.pts===kPts&&t.gd<kGd) || (t.pts===kPts&&t.gd===kGd&&t.gf<kGf)) a.belowKor[g]=(a.belowKor[g]||0)+1;
+  }
   // Korea's true R32 odds (advance as top-2, or as a top-8 third)
   const kgp=GROUP_OF['South Korea'], kst=standings[kgp];
   let kp=0; while(kp<4&&kst[kp].team!=='South Korea')kp++;
@@ -719,7 +766,7 @@ function run(){
     if(acc.n<total){ setTimeout(step,0); }
     else{
       const ms=(performance.now()-t0).toFixed(0);
-      document.getElementById('status').textContent='50,000 simulations · live results locked through '+RESULTS_DATE+' · '+ms+' ms.';
+      document.getElementById('status').textContent='50,000 simulations · real results played through '+RESULTS_DATE+' · '+ms+' ms.';
       if(btn) btn.disabled=false;
       render();
     }
@@ -807,6 +854,64 @@ function render(){
 
   renderFocus();
   renderThird();
+  renderBoard();
+}
+
+/* ------------------- WHAT NEEDS TO HAPPEN (bingo board) -------- */
+function modalThird(g){ const tt=acc.tTeam[g]||{}; let mo='?',mc=-1; for(const t in tt){ if(tt[t]>mc){mc=tt[t];mo=t;} } return mo; }
+function kickoffMs(date,time){
+  const mt=(time||'').match(/(\d{1,2}):(\d{2})\s*UTC([+-]\d{1,2})/); if(!date||!mt) return NaN;
+  const off=+mt[3], sign=off<0?'-':'+', oh=String(Math.abs(off)).padStart(2,'0');
+  return Date.parse(date+'T'+mt[1].padStart(2,'0')+':'+mt[2]+':00'+sign+oh+':00');
+}
+function fmtKick(ms){ try{ return new Date(ms).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }catch(e){ return ''; } }
+function renderBoard(){
+  const host=document.getElementById('bingo'); if(!host) return;
+  const n=acc.n||1, now=Date.now();
+  const NONA=Object.keys(GROUPS).filter(g=>g!=='A');
+  const done=g=>lockResults && (PLAYED[g]||[]).length===6;
+  const prob=g=>100*(acc.belowKor[g]||0)/n;                 // chance this group's 3rd ends below Korea
+  const settledAbove=NONA.filter(g=>done(g)&&prob(g)<50).length;
+  const remaining=NONA.filter(g=>!done(g));
+  const banked=NONA.filter(g=>done(g)&&prob(g)>=50);
+  const needed=Math.min(remaining.length, Math.max(0, remaining.length-(7-settledAbove)));
+  const onTrack=remaining.filter(g=>prob(g)>=50).length;
+
+  document.getElementById('boardHead').innerHTML = remaining.length===0
+    ? 'Every group is done — see Korea’s final verdict in the headline above.'
+    : 'Korea has finished 3rd, so it’s out of their hands. They need <span class="need">'+needed+' of '+remaining.length+'</span> of the remaining groups to end with a 3rd‑placer <b>weaker than Korea</b> (3 pts, −1 GD). '+
+      '✅ <b>'+banked.length+'</b> already banked · ⏳ <b>'+onTrack+' of '+remaining.length+'</b> currently leaning Korea’s way.';
+
+  host.innerHTML='';
+  remaining.map(g=>({g,p:prob(g)})).sort((a,b)=>b.p-a.p).forEach(o=>{
+    const g=o.g, proj=modalThird(g), good=o.p>=50;
+    const tile=document.createElement('div'); tile.className='btile'+(good?' good':'');
+    let mh='';
+    (FIXTURES[g]||[]).forEach(m=>{
+      const ms=kickoffMs(m[2],m[3]); let when;
+      if(isFinite(ms)){
+        if(now<ms) when='<span class="when">'+fmtKick(ms)+'</span>';
+        else if(now<ms+115*60000) when='<span class="live">🔴 LIVE</span>';
+        else when='<span class="when">awaiting result</span>';
+      } else when='<span class="when">'+(m[3]||'TBD')+'</span>';
+      mh+='<div class="bm"><span class="fl">'+(FLAGS[m[0]]||'')+'</span>'+m[0]+
+        '<span class="vs">v</span>'+m[1]+'<span class="fl">'+(FLAGS[m[1]]||'')+'</span>'+when+'</div>';
+    });
+    tile.innerHTML='<div class="bh"><div class="bg">Group '+g+'</div><div class="bp">'+o.p.toFixed(0)+'%</div></div>'+
+      '<div class="proj">Likely 3rd: <b>'+(FLAGS[proj]||'')+' '+proj+'</b> — must stay below Korea</div>'+mh;
+    host.appendChild(tile);
+  });
+
+  const bk=document.getElementById('boardBanked'); bk.innerHTML='';
+  const settled=NONA.filter(g=>done(g));
+  if(settled.length){
+    bk.innerHTML='<span class="blab">Decided</span>';
+    settled.map(g=>({g,fav:prob(g)>=50,team:modalThird(g)})).sort((a,b)=>(b.fav?1:0)-(a.fav?1:0)).forEach(o=>{
+      const c=document.createElement('span'); c.className='bchip '+(o.fav?'y':'n');
+      c.innerHTML=(o.fav?'✅':'✕')+' '+(FLAGS[o.team]||'')+' '+o.team+' ('+o.g+')';
+      bk.appendChild(c);
+    });
+  }
 }
 
 /* ------------------- THIRD-PLACE RACE (Korea ticket) ----------- */
@@ -829,9 +934,9 @@ function renderThird(){
   const rivals=rows.slice(6,10).filter(r=>r.g!==kg).map(r=>r.team);
   document.getElementById('koStatus').innerHTML = koLocked
     ? 'South Korea · Group '+kg+' · finished <b>3rd</b> ('+kr.pts.toFixed(0)+' pts, GD '+(kr.gd>=0?'+':'')+kr.gd.toFixed(0)+')'
-    : 'South Korea · Group '+kg+' · live projection (group not yet decided / results unlocked)';
+    : 'South Korea · Group '+kg+' · live projection (group not yet decided)';
   document.getElementById('koNote').innerHTML = (koLocked
-    ? 'Korea is locked in 3rd, so they advance only as one of the <b>8 best third-placed teams</b> (of 12) — out of their hands now. '
+    ? 'Korea has finished 3rd, so they advance only as one of the <b>8 best third-placed teams</b> (of 12) — out of their hands now. '
     : 'Korea can still finish anywhere in Group '+kg+'; if they end up 3rd they need to be a <b>top-8 third</b>. ')
     + 'Teams near the cut line: '+rivals.map(t=>(FLAGS[t]||'')+' '+t).join(', ')+'.';
 
@@ -839,7 +944,7 @@ function renderThird(){
   const lockedRows=rows.filter(r=>r.locked), nLock=lockedRows.length, nPlay=12-nLock;
   const callout=document.getElementById('koCallout');
   if(callout) callout.innerHTML = nPlay>0
-    ? '🔒 Only <b>'+nLock+' of 12</b> third-place spots are settled ('+lockedRows.map(r=>(FLAGS[r.team]||'')+' '+r.team).join(', ')+'). The other <b>'+nPlay+'</b> group'+(nPlay>1?'s':'')+' still play their final match — those teams can climb <b>above</b> Korea. Rows are ranked by each team’s <b>chance to finish in the top 8</b>, so this is a live projection, not a settled table.'
+    ? '✅ Only <b>'+nLock+' of 12</b> third-place spots are settled ('+lockedRows.map(r=>(FLAGS[r.team]||'')+' '+r.team).join(', ')+'). The other <b>'+nPlay+'</b> group'+(nPlay>1?'s':'')+' still play their final match — those teams can climb <b>above</b> Korea. Rows are ranked by each team’s <b>chance to finish in the top 8</b>, so this is a live projection, not a settled table.'
     : 'All 12 groups are complete — these are the final eight best third-place qualifiers.';
 
   const wrap=document.getElementById('thirdRace'); wrap.innerHTML='';
@@ -847,7 +952,7 @@ function renderThird(){
     if(i===8){ const cl=document.createElement('div'); cl.className='cutline'; cl.textContent='✂ qualification cut-off — top 8 advance'; wrap.appendChild(cl); }
     const d=document.createElement('div'); d.className='trow '+(i<8?'in':'out')+(r.locked?'':' proj')+(r.g===kg?' koreahl':'');
     const pts=(r.locked? r.pts.toFixed(0) : '≈'+r.pts.toFixed(1))+' pts · GD '+(r.gd>=0?'+':'')+r.gd.toFixed(r.locked?0:1);
-    const stat=r.locked?'<span class="tstat lock">✓ locked</span>':'<span class="tstat play">⏳ to play</span>';
+    const stat=r.locked?'<span class="tstat lock">✓ played</span>':'<span class="tstat play">⏳ to play</span>';
     d.innerHTML='<div class="rk">'+(i+1)+'</div><div class="fl">'+(FLAGS[r.team]||'')+'</div>'+
       '<div class="nm">'+r.team+'<span class="gl">Grp '+r.g+'</span>'+stat+'</div>'+
       '<div class="pts">'+pts+'</div><div class="qp">'+r.q.toFixed(0)+'%</div>';
@@ -975,7 +1080,7 @@ function renderResultsPanel(){
     });
     blk.innerHTML=h; grid.appendChild(blk);
   });
-  const s=document.getElementById('resultsSummary'); if(s) s.textContent='through '+RESULTS_DATE+' · '+count+' matches locked';
+  const s=document.getElementById('resultsSummary'); if(s) s.textContent='through '+RESULTS_DATE+' · '+count+' matches played';
   const tag=document.getElementById('resTag'); if(tag) tag.textContent='(through '+RESULTS_DATE+')';
 }
 async function refreshLive(){
@@ -987,18 +1092,22 @@ async function refreshLive(){
     const data=await res.json();
     const MAP={'Czech Republic':'Czechia','Turkey':'Türkiye','USA':'United States'};
     const norm=n=>MAP[n]||n, today=new Date().toISOString().slice(0,10);
-    const np={}; let latest='0000-00-00', total=0;
+    const np={}, nf={}; let latest='0000-00-00', total=0;
     (data.matches||[]).forEach(m=>{
-      if(m.group&&m.group.indexOf('Group ')===0&&m.score&&m.score.ft&&m.date&&m.date<=today){
-        const a=norm(m.team1), b=norm(m.team2); if(!(a in RATINGS)||!(b in RATINGS)) return;
-        const g=m.group.slice(6).trim();
+      if(!(m.group&&m.group.indexOf('Group ')===0)) return;
+      const a=norm(m.team1), b=norm(m.team2); if(!(a in RATINGS)||!(b in RATINGS)) return;
+      const g=m.group.slice(6).trim();
+      if(m.score&&m.score.ft&&m.date&&m.date<=today){          // finished
         (np[g]=np[g]||[]).push([a,b,m.score.ft[0],m.score.ft[1]]); total++;
         if(m.date>latest) latest=m.date;
+      } else if(!(m.score&&m.score.ft)){                       // scheduled / live (no result yet)
+        (nf[g]=nf[g]||[]).push([a,b,m.date||'',m.time||'']);
       }
     });
     if(total===0) throw new Error('no completed matches found for today');
     if(latest<RESULTS_DATE){ st.textContent='Live feed ('+latest+') is behind the bundled snapshot ('+RESULTS_DATE+') — keeping the newer data.'; return; }
     for(const g in PLAYED) delete PLAYED[g]; Object.assign(PLAYED,np);
+    for(const g in FIXTURES) delete FIXTURES[g]; Object.assign(FIXTURES,nf);
     RESULTS_DATE=latest; renderResultsPanel();
     st.textContent='Live results loaded ('+total+' matches through '+latest+'). Re-running…';
     run();
