@@ -1020,7 +1020,7 @@ function enumGroup(g){
   const ka=baseStandObj('A')['South Korea']; const koP=ka.pts, koGd=ka.gf-ka.ga, koGf=ka.gf;
   const base=baseStandObj(g);
   const MX=8, SS=[]; for(let x=0;x<MX;x++)for(let y=0;y<MX;y++)SS.push([x,y]);
-  const tally=rem.map(()=>({w0:[0,0],draw:[0,0],w1:[0,0]}));
+  const tally=rem.map(()=>({w0:[0,0],draw:[0,0],w1:[0,0]})), marg=rem.map(()=>({}));
   let fav=0,tot=0;
   function evalSc(sc){
     const st={}; teams.forEach(t=>st[t]={pts:base[t].pts,gf:base[t].gf,ga:base[t].ga});
@@ -1030,11 +1030,12 @@ function enumGroup(g){
     const th=rows[2];
     const w = th.pts<koP || (th.pts===koP&&th.gd<koGd) || (th.pts===koP&&th.gd===koGd&&th.gf<koGf);
     tot++; if(w)fav++;
-    rem.forEach((m,mi)=>{const x=m.ox+sc[mi][0],y=m.oy+sc[mi][1]; const lab=x>y?'w0':(y>x?'w1':'draw'); tally[mi][lab][1]++; if(w)tally[mi][lab][0]++;});
+    rem.forEach((m,mi)=>{const x=m.ox+sc[mi][0],y=m.oy+sc[mi][1]; const lab=x>y?'w0':(y>x?'w1':'draw'); tally[mi][lab][1]++; if(w)tally[mi][lab][0]++;
+      const d=x-y, e=marg[mi][d]||(marg[mi][d]=[0,0]); e[1]++; if(w)e[0]++;});   // favorability by goal margin
   }
   (function loop(mi,a){ if(mi===rem.length){evalSc(a);return;} for(const s of SS){a.push(s);loop(mi+1,a);a.pop();} })(0,[]);
   const v=rem.map((m,mi)=>{const t=tally[mi],h=r=>t[r][1]?100*t[r][0]/t[r][1]:0;
-    const hA=h('w0'),hD=h('draw'),hB=h('w1'); return {m,hA,hD,hB,spread:Math.max(hA,hD,hB)-Math.min(hA,hD,hB)};});
+    const hA=h('w0'),hD=h('draw'),hB=h('w1'); return {m,hA,hD,hB,marg:marg[mi],spread:Math.max(hA,hD,hB)-Math.min(hA,hD,hB)};});
   v.sort((a,b)=>b.spread-a.spread);
   return {fav:100*fav/tot, decisive:v[0]};
 }
@@ -1080,7 +1081,7 @@ function pivotalPlayed(g, onlyPair){
 // hA/hD/hB = % of scorelines in which "A wins / draw / B wins" leaves this group's
 // 3rd-placer WEAKER than Korea. We state what is NECESSARY, and only say "seals it"
 // for an outcome that is 100% sufficient — never overstate a result that merely helps.
-function condHTML(A,B,hA,hD,hB){
+function condHTML(A,B,hA,hD,hB,marg){
   const ko=LANG==='ko', note=s=>' <span class="bynote">'+s+'</span>';
   const FL=t=>'<b>'+(FLAGS[t]||'')+' '+TN(t)+'</b>';
   const sp=t=>_jong(TN(t))?'이':'가', op=t=>_jong(TN(t))?'을':'를', wp=t=>_jong(TN(t))?'과':'와';
@@ -1111,7 +1112,16 @@ function condHTML(A,B,hA,hD,hB){
   if(dead[2]&&!dead[0]&&!dead[1]) return avoid(A,B)+(suf[1]?nDraw:'');   // B winning kills it
   const help=[['A',hA],['D',hD],['B',hB]].filter(x=>x[1]>Z);            // only one outcome helps at all
   if(help.length===1){ const r=help[0][0], base=r==='A'?beat(A,B):r==='B'?beat(B,A):drawc;
-    return base+(help[0][1]>=G?'':nNeeded); }
+    if(help[0][1]>=G) return base;
+    // The win helps but isn't a lock — work out the goal margin it must clear and say it outright.
+    if(marg && (r==='A'||r==='B')){
+      const sign=r==='A'?1:-1, cum=N=>{let f=0,t=0; for(const d in marg){const dd=+d; if(sign>0?dd>=N:dd<=-N){f+=marg[d][0];t+=marg[d][1];}} return t?100*f/t:0;};
+      let N=0; for(let n=2;n<=7;n++){ if(cum(n)>=85 && cum(n-1)<85){ N=n; break; } }
+      if(N){ const W=r==='A'?A:B, L=r==='A'?B:A;
+        return ko ? FL(W)+sp(W)+' '+FL(L)+op(L)+' <b>'+N+'골 차 이상</b>으로 이겨야 함'
+                  : FL(W)+' must beat '+FL(L)+' by <b>'+N+'+ goals</b>'; }
+    }
+    return base+nNeeded; }
   if(suf[1]) return drawSeals+nUsually(hB>=hA?B:A);                      // a single outcome seals it
   if(suf[0]) return sealsBeat(A,B)+nKind;
   if(suf[2]) return sealsBeat(B,A)+nKind;
@@ -1162,7 +1172,7 @@ function renderBoard(){
       body:'<div class="cond condgood">'+tt('✅ Secured — going Korea’s way','✅ 확정 — 한국에 유리')+'</div>'}); return; }
     if(e.fav<=0.5){ cards.push({g, sortk:9.4e15, cls:'btile bad', p:prob(g),
       body:'<div class="cond">'+tt('✕ Can no longer help Korea','✕ 더 이상 한국에 도움 안 됨')+'</div><div class="bstat">'+tt('Not satisfied','불충족')+'</div>'}); return; }
-    const d=e.decisive, m=d.m, cond=condHTML(m.a,m.b,d.hA,d.hD,d.hB);
+    const d=e.decisive, m=d.m, cond=condHTML(m.a,m.b,d.hA,d.hD,d.hB,d.marg);
     let stat, sortk, isLive=false;
     if(m.live){ sortk=-1; isLive=true; stat='<span class="live">🔴 LIVE</span> <span class="lscore">'+(FLAGS[m.a]||'')+' '+m.ox+'–'+m.oy+' '+(FLAGS[m.b]||'')+'</span>'+(m.clock?' <span class="lmin">'+m.clock+"'</span>":''); }
     else { const ms=kickoffMs(m.date,m.time); sortk=isFinite(ms)?ms:7e15;
