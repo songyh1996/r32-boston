@@ -300,6 +300,8 @@
   .btile .bg{font-weight:800;font-size:14px}
   .btile .bp{font-weight:900;font-variant-numeric:tabular-nums;font-size:15px;color:var(--mut);text-align:right;line-height:1.1}
   .btile .bp .bpl{display:block;font-size:9px;font-weight:700;color:var(--mut2);letter-spacing:.03em}
+  .btile .bp.livep{animation:pulse 1.8s ease-in-out infinite}
+  .btile .bp.livep .bpl{color:var(--acc)}
   .btile.good .bp{color:var(--ok)}
   .btile.good .bstat{color:var(--ok);font-weight:700}
   .btile .cond{font-size:14.5px;font-weight:500;line-height:1.45;margin:2px 0 8px;color:var(--mut)}
@@ -713,7 +715,7 @@ function simMatch(ra,rb){
 /* ---------------------- LIVE SCORES (ESPN) ---------------------- */
 // In-play + just-finished scores from ESPN's public scoreboard (no API key, CORS-enabled,
 // so it works straight from the browser). LIVE[group] = [[teamA,teamB,goalsA,goalsB,minute],…]
-let LIVE = {};
+let LIVE = {}, _liveSig = '';
 const ESPN_SB = d => 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates='+d;
 const _stripD = s => (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 const _nk = s => _stripD((s||'').toLowerCase()).replace(/[^a-z0-9]/g,'');
@@ -1078,7 +1080,8 @@ function renderBoard(){
   host.innerHTML='';
   cards.sort((a,b)=>a.sortk-b.sortk).forEach(o=>{
     const tile=document.createElement('div'); tile.className=o.cls;
-    const pp = o.p!=null ? '<div class="bp">'+o.p.toFixed(0)+'%<span class="bpl">'+tt('chance','성공률')+'</span></div>' : '';
+    const isLive=o.cls.indexOf('livecard')>=0;
+    const pp = o.p!=null ? '<div class="bp'+(isLive?' livep':'')+'">'+o.p.toFixed(0)+'%<span class="bpl">'+(isLive?tt('live','실시간'):tt('chance','성공률'))+'</span></div>' : '';
     tile.innerHTML='<div class="bh"><div class="bg">'+tt('Group ','그룹 ')+o.g+'</div>'+pp+'</div>'+o.body;
     host.appendChild(tile);
   });
@@ -1366,6 +1369,11 @@ async function fetchLiveScores(){
     }catch(e){ /* skip this date */ }
   }
   if(!seen) return false;
+  // Skip the (expensive) re-run when ESPN returns the same scores/minutes as last poll, so we
+  // can poll often (every 20s) for snappy updates without burning CPU on identical data.
+  const sig=JSON.stringify(fin)+'|'+JSON.stringify(live);
+  if(sig===_liveSig) return false;
+  _liveSig=sig;
   const pairIn=(arr,a,b)=>(arr||[]).some(m=>(m[0]===a&&m[1]===b)||(m[0]===b&&m[1]===a));
   const dropPair=(arr,a,b)=>{ if(arr) for(let i=arr.length-1;i>=0;i--){const m=arr[i]; if((m[0]===a&&m[1]===b)||(m[0]===b&&m[1]===a)) arr.splice(i,1);} };
   // Finished -> PLAYED (replace any prior copy). We deliberately do NOT mutate FIXTURES:
@@ -1421,7 +1429,7 @@ setupTabs();
 renderResultsPanel();
 run();          // instant render from the bundled snapshot
 refreshAll();   // then always pull the latest results (so a reload is never stale)
-setInterval(fetchLiveScores, 60000);   // keep live scores ticking while you watch
+setInterval(fetchLiveScores, 20000);   // poll often; fetchLiveScores re-runs only when scores change
 </script>
 </body>
 </html>
