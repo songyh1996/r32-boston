@@ -207,6 +207,11 @@
   .resm .fl{font-size:15px}
   .resm .tn{color:var(--mut);overflow:hidden;text-overflow:ellipsis}
   .resm .tn.w{color:var(--txt);font-weight:700}
+  .resm.rlive .sc{color:var(--acc)}
+  .resm.rlive .rl{color:var(--acc);font-weight:800;font-size:10.5px;margin-left:1px;animation:pulse 1.8s ease-in-out infinite}
+  .resm.rup{opacity:.72;flex-wrap:wrap}
+  .resm.rup .vs{color:var(--mut2);font-weight:700;font-size:10.5px;margin:0 4px}
+  .resm.rup .kt{color:var(--acc2);font-size:10.5px;font-weight:600;margin-left:6px;white-space:nowrap}
 
   /* TABS */
   .tabbar{display:flex;gap:6px;margin:24px 0 14px;border-bottom:1px solid var(--line);flex-wrap:wrap;
@@ -726,7 +731,7 @@ function simMatch(ra,rb){
 /* ---------------------- LIVE SCORES (ESPN) ---------------------- */
 // In-play + just-finished scores from ESPN's public scoreboard (no API key, CORS-enabled,
 // so it works straight from the browser). LIVE[group] = [[teamA,teamB,goalsA,goalsB,minute],…]
-let LIVE = {}, _liveSig = '', _trackMatch = {}, _scoreSeen = {}, _goalQ = [], _goalShowing = false, _lastUpdate = null;
+let LIVE = {}, _liveSig = '', _trackMatch = {}, _scoreSeen = {}, _goalQ = [], _goalShowing = false, _lastUpdate = null, _lastSimMs = 0;
 const ESPN_SB = d => 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates='+d;
 const _stripD = s => (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 const _nk = s => _stripD((s||'').toLowerCase()).replace(/[^a-z0-9]/g,'');
@@ -887,11 +892,8 @@ function run(){
     document.getElementById('status').textContent=tt('Simulating… ','시뮬레이션 중… ')+acc.n.toLocaleString()+' / '+total.toLocaleString();
     if(acc.n<total){ setTimeout(step,0); }
     else{
-      const ms=(performance.now()-t0).toFixed(0);
-      const liveN=Object.values(LIVE).reduce((s,a)=>s+a.length,0);
-      const upd=_lastUpdate?fmtClock(_lastUpdate):'';
-      document.getElementById('status').textContent=tt('50,000 simulations · played through '+RESULTS_DATE+(liveN?' · 🔴 '+liveN+' live now':'')+(upd?' · updated '+upd:'')+' · '+ms+' ms.',
-        '50,000회 시뮬레이션 · '+RESULTS_DATE+'까지 반영'+(liveN?' · 🔴 '+liveN+'경기 진행 중':'')+(upd?' · '+upd+' 갱신':'')+' · '+ms+' ms');
+      _lastSimMs=+(performance.now()-t0).toFixed(0);
+      setSimStatus();
       if(btn) btn.disabled=false;
       render();
     }
@@ -905,6 +907,16 @@ function render(){
   renderThird();
   renderBoard();
   renderLiveBar();
+}
+// Build the sim status line. Called both when a run finishes AND on every successful poll, so its
+// "updated HH:MM" stamp stays in sync with the results-summary stamp instead of freezing until the
+// next time the simulation actually re-runs.
+function setSimStatus(){
+  const el=document.getElementById('status'); if(!el) return;
+  const liveN=Object.values(LIVE).reduce((s,a)=>s+a.length,0);
+  const upd=_lastUpdate?fmtClock(_lastUpdate):'';
+  el.textContent=tt('50,000 simulations · played through '+RESULTS_DATE+(liveN?' · 🔴 '+liveN+' live now':'')+(upd?' · updated '+upd:'')+(_lastSimMs?' · '+_lastSimMs+' ms':'')+'.',
+    '50,000회 시뮬레이션 · '+RESULTS_DATE+'까지 반영'+(liveN?' · 🔴 '+liveN+'경기 진행 중':'')+(upd?' · '+upd+' 갱신':'')+(_lastSimMs?' · '+_lastSimMs+' ms':''));
 }
 // Prominent top ticker of matches that are LIVE right now (real in-play scores from ESPN).
 function renderLiveBar(){
@@ -1338,18 +1350,24 @@ function buildAllRatings(){
 function renderResultsPanel(){
   const grid=document.getElementById('resGrid'); if(!grid) return;
   grid.innerHTML=''; let count=0;
+  const inList=(arr,a,b)=>(arr||[]).some(m=>(m[0]===a&&m[1]===b)||(m[0]===b&&m[1]===a));
+  const flag=t=>'<span class="fl">'+(FLAGS[t]||'')+'</span>', team=(t,w)=>'<span class="tn'+(w?' w':'')+'">'+TN(t)+'</span>';
   Object.keys(GROUPS).sort().forEach(g=>{
-    const ms=PLAYED[g]||[]; if(!ms.length) return;
+    const played=PLAYED[g]||[];
+    const live=(LIVE[g]||[]).filter(m=>!inList(played,m[0],m[1]));               // in-progress now
+    const up=(FIXTURES[g]||[]).filter(m=>!inList(played,m[0],m[1])&&!inList(live,m[0],m[1]));  // not played yet
+    if(!played.length&&!live.length&&!up.length) return;
     const blk=document.createElement('div'); blk.className='resg';
     let h='<div class="gh">'+tt('Group ','그룹 ')+g+'</div>';
-    ms.forEach(m=>{ count++;
-      const aw=m[2]>m[3], bw=m[3]>m[2];
-      h+='<div class="resm"><span class="fl">'+(FLAGS[m[0]]||'')+'</span>'+
-         '<span class="tn'+(aw?' w':'')+'">'+TN(m[0])+'</span>'+
-         '<span class="sc">'+m[2]+'–'+m[3]+'</span>'+
-         '<span class="tn'+(bw?' w':'')+'">'+TN(m[1])+'</span>'+
-         '<span class="fl">'+(FLAGS[m[1]]||'')+'</span></div>';
-    });
+    played.forEach(m=>{ count++; const aw=m[2]>m[3], bw=m[3]>m[2];
+      h+='<div class="resm">'+flag(m[0])+team(m[0],aw)+'<span class="sc">'+m[2]+'–'+m[3]+'</span>'+team(m[1],bw)+flag(m[1])+'</div>'; });
+    live.forEach(m=>{   // current live score + minute
+      h+='<div class="resm rlive">'+flag(m[0])+team(m[0])+'<span class="sc">'+m[2]+'–'+m[3]+'</span>'+team(m[1])+flag(m[1])+
+         '<span class="rl">🔴'+(m[4]?" "+m[4]+"'":'')+'</span></div>'; });
+    up.forEach(m=>{   // not played yet — show the kickoff in the viewer's local time
+      const k=kickoffMs(m[2],m[3]), when=isFinite(k)?fmtKick(k):(m[3]||'');
+      h+='<div class="resm rup">'+flag(m[0])+team(m[0])+'<span class="vs">vs</span>'+team(m[1])+flag(m[1])+
+         (when?'<span class="kt">'+when+'</span>':'')+'</div>'; });
     blk.innerHTML=h; grid.appendChild(blk);
   });
   const upd=_lastUpdate?fmtClock(_lastUpdate):'';
@@ -1442,7 +1460,7 @@ async function fetchLiveScores(){
   // Skip the (expensive) re-run when ESPN returns the same scores/minutes as last poll, so we
   // can poll often (every 20s) for snappy updates without burning CPU on identical data.
   const sig=JSON.stringify(fin)+'|'+JSON.stringify(live);
-  if(sig===_liveSig){ renderResultsPanel(); return false; }   // unchanged data: still refresh the "updated" time
+  if(sig===_liveSig){ setSimStatus(); renderResultsPanel(); return false; }   // unchanged: refresh BOTH "updated" stamps together
   _liveSig=sig;
   // Detect goals: any team whose score rose since the last poll → celebrate. We skip the very
   // first sighting of a match (no prior score) so loading the page never fires stale goals.
