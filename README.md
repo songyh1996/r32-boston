@@ -38,8 +38,8 @@ The page is a single, self‑contained `index.html` (no build step, no dependenc
   separate ranked races — **Seat A** (who wins Group E) and **Seat B** (the wildcard
   3rd‑place team) — each summing to ~100%, plus the most likely **exact A‑vs‑B ties**.
 - **Real group‑stage results are baked in.** Completed matches are locked to their
-  actual scores (only remaining fixtures are simulated). Toggle them off to compare with
-  the pre‑tournament forecast, or hit **↻ Refresh from live data** to pull the latest.
+  actual scores (only remaining fixtures are simulated). Live and just‑finished scores are
+  pulled automatically from ESPN every 20 seconds — there's no refresh button to press.
 - Adjust the **number of simulations** (2k–60k), **edit any team's rating** (Seat A
   inline or the full 48‑team editor), and re‑run to watch the picture shift.
 - See **which group** Boston's wildcard third‑placed team comes from most often.
@@ -56,7 +56,7 @@ It is a forward Monte Carlo simulation, run entirely in your browser:
    [openfootball/worldcup.json](https://github.com/openfootball/worldcup.json)); only the
    not‑yet‑played fixtures are simulated.
    **Live, in‑play scores** are layered on top from ESPN's public scoreboard (no API key,
-   fetched client‑side, auto‑refreshed every minute): a match in progress keeps its current
+   fetched client‑side, auto‑refreshed every 20 seconds): a match in progress keeps its current
    score and only the *remaining* minutes are simulated, so every probability moves with the
    live action.
 3. **Group stage.** All 12 groups are completed; teams are ranked by

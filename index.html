@@ -353,7 +353,6 @@
 
   <div class="panel controls">
     <div class="ctop">
-      <button class="runbtn" id="liveBtn" data-i18n="btnLive">↻ Refresh from live data</button>
       <div class="grow">
         <div class="progwrap"><div class="progbar" id="prog"></div></div>
         <div class="status" id="status" data-i18n="statusInit">50,000 simulations · real results played.</div>
@@ -363,8 +362,8 @@
       <summary><span class="rsum"><span data-i18n="resSummPre">✅ Real results baked in</span> · <span id="resultsSummary">live group-stage results</span></span></summary>
       <div class="body">
         <p data-i18n="resBody">These completed matches are <b>played</b> in every simulation; only the remaining fixtures are simulated. Source:
-          <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a>.
-          Hit <b>Refresh from live data</b> to pull the latest scores.</p>
+          <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a>,
+          with live and just-finished scores pulled <b>automatically</b> from ESPN — no need to refresh.</p>
         <div class="resgrid" id="resGrid"></div>
       </div>
     </details>
@@ -459,7 +458,7 @@
       <h4>Real results (live)</h4>
       <ul>
         <li>Completed group-stage matches are <b>played</b> to their actual scorelines; only the remaining fixtures are simulated. Finished results come from <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a>.</li>
-        <li><b>Live, in‑play scores</b> are layered on top from ESPN's public scoreboard: a match in progress keeps its current score and only the <i>remaining</i> minutes are simulated, so every probability moves with the live action. Auto‑refreshes every minute.</li>
+        <li><b>Live, in‑play scores</b> are layered on top from ESPN's public scoreboard: a match in progress keeps its current score and only the <i>remaining</i> minutes are simulated, so every probability moves with the live action. Auto‑refreshes every 20 seconds, with no button to press.</li>
         <li>Ratings stay at their pre-tournament value for matches still to be played — a real 7–1 already reshapes goal difference and the third-place race on its own.</li>
       </ul>
       <h4>Honest caveats</h4>
@@ -566,10 +565,9 @@ const KO_UI = {
   badge:'FIFA 월드컵 2026 · 32강을 향한 여정',
   h1:'대한민국의 <span class="b">R32</span> 여정',
   sub:'대한민국의 32강 진출 실시간 확률 — R32 대진 전망까지.<br><b>조별리그 라이브 결과 반영.</b>',
-  btnLive:'↻ 라이브 데이터 새로고침',
   statusInit:'50,000회 시뮬레이션 · 실제 결과 반영.',
   resSummPre:'✅ 실제 결과 반영됨',
-  resBody:'아래 완료된 경기는 모든 시뮬레이션에 <b>실제 결과</b>로 반영되고, 남은 경기만 시뮬레이션합니다. 출처: <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a>. <b>라이브 데이터 새로고침</b>으로 최신 스코어를 불러올 수 있어요.',
+  resBody:'아래 완료된 경기는 모든 시뮬레이션에 <b>실제 결과</b>로 반영되고, 남은 경기만 시뮬레이션합니다. 출처: <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a>. 라이브 및 방금 끝난 스코어는 ESPN에서 <b>자동으로</b> 불러옵니다 — 따로 새로고침할 필요 없어요.',
   tabThird:'🇰🇷 한국, 32강 갈까?',
   tabFocus:'🧭 32강에서 누구와?',
   tabBoston:'🏟️ 보스턴 32강은 누구?',
@@ -609,7 +607,7 @@ const KO_UI = {
     '<li>경기마다 레이팅 차이가 기대 득점 우위를 정하고, 각 팀의 득점은 푸아송 분포에서 추출되어 스코어와 골득실이 현실적입니다.</li></ul>'+
     '<h4>실제 결과 (라이브)</h4><ul>'+
     '<li>완료된 조별리그 경기는 실제 스코어로 <b>반영</b>되고 남은 경기만 시뮬레이션합니다. 완료 결과는 <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a>에서 가져옵니다.</li>'+
-    '<li><b>라이브 진행 스코어</b>는 ESPN 공개 스코어보드에서 위에 덧입혀집니다. 진행 중인 경기는 현재 스코어를 유지하고 <i>남은</i> 시간만 시뮬레이션하므로 모든 확률이 경기 흐름에 따라 움직입니다. 1분마다 자동 새로고침됩니다.</li>'+
+    '<li><b>라이브 진행 스코어</b>는 ESPN 공개 스코어보드에서 위에 덧입혀집니다. 진행 중인 경기는 현재 스코어를 유지하고 <i>남은</i> 시간만 시뮬레이션하므로 모든 확률이 경기 흐름에 따라 움직입니다. 버튼 없이 20초마다 자동 새로고침됩니다.</li>'+
     '<li>아직 치르지 않은 경기는 대회 전 레이팅 값을 유지합니다.</li></ul>'+
     '<h4>솔직한 한계</h4><ul>'+
     '<li>재미와 통찰을 위한 모델이며 <b>베팅 도구가 아닙니다</b>. 레이팅은 근사값이고, FIFA 3위 조합표는 유효한 무작위 매칭으로 근사합니다.</li>'+
@@ -975,7 +973,7 @@ function pivotalPlayed(g){
     const th=rows[2];
     return (th.pts<koP || (th.pts===koP&&th.gd<koGd) || (th.pts===koP&&th.gd===koGd&&th.gf<koGf))?1:0;
   };
-  let best=null, bestSpread=-1;
+  const rows=[];
   played.forEach((m,mi)=>{
     const t={w0:[0,0],draw:[0,0],w1:[0,0]};
     for(let x=0;x<MX;x++)for(let y=0;y<MX;y++){
@@ -984,9 +982,14 @@ function pivotalPlayed(g){
     }
     const h=r=>t[r][1]?100*t[r][0]/t[r][1]:0;
     const hA=h('w0'),hD=h('draw'),hB=h('w1'), spread=Math.max(hA,hD,hB)-Math.min(hA,hD,hB);
-    if(spread>bestSpread){ bestSpread=spread; best={m,hA,hD,hB}; }
+    rows.push({m,hA,hD,hB,spread,mi});
   });
-  return best;   // {m:[a,b,ga,gb], hA, hD, hB}
+  // Most decisive match for Korea wins; but among near-ties (within EPS points) prefer the one
+  // played LAST. PLAYED grows in play order (live/just-finished matches get appended), so the
+  // highest index ≈ the match that actually completed the group — the one the viewer just
+  // watched — so the card doesn't jump back to an older fixture the instant the group finishes.
+  const mx=Math.max.apply(null,rows.map(r=>r.spread)), EPS=15;
+  return rows.filter(r=>r.spread>=mx-EPS).sort((a,b)=>b.mi-a.mi)[0];   // {m:[a,b,ga,gb], hA, hD, hB, ...}
 }
 // Turn per-result help shares into a plain-English condition.
 // hA/hD/hB = % of scorelines in which "A wins / draw / B wins" leaves this group's
@@ -1299,7 +1302,7 @@ function renderResultsPanel(){
 }
 async function refreshLive(){
   const st=document.getElementById('status'), btn=document.getElementById('liveBtn');
-  btn.disabled=true; st.textContent=tt('Fetching live results from openfootball…','openfootball에서 라이브 결과 불러오는 중…');
+  if(btn) btn.disabled=true; st.textContent=tt('Fetching live results from openfootball…','openfootball에서 라이브 결과 불러오는 중…');
   try{
     const res=await fetch(LIVE_URL,{cache:'no-store'});
     if(!res.ok) throw new Error('HTTP '+res.status);
@@ -1324,10 +1327,11 @@ async function refreshLive(){
     for(const g in FIXTURES) delete FIXTURES[g]; Object.assign(FIXTURES,nf);
     RESULTS_DATE=latest; renderResultsPanel();
     st.textContent=tt('Live results loaded ('+total+' matches through '+latest+'). Re-running…','라이브 결과 반영 ('+latest+'까지 '+total+'경기). 다시 계산 중…');
+    _liveSig='';   // re-baselined PLAYED from openfootball — force the ESPN overlay to re-apply on top
     run();
   }catch(e){
     st.textContent=tt('Live refresh failed ('+e.message+'). Keeping built-in results through '+RESULTS_DATE+'.','라이브 새로고침 실패 ('+e.message+'). '+RESULTS_DATE+'까지 내장 결과 유지.');
-  }finally{ btn.disabled=false; }
+  }finally{ if(btn) btn.disabled=false; }
 }
 
 // Overlay in-play + just-finished scores from ESPN on top of the openfootball baseline.
@@ -1415,7 +1419,6 @@ function setupTabs(){
 /* ----------------------------- INIT ----------------------------- */
 // Refresh = openfootball baseline (finished results) then ESPN overlay (live + just-finished).
 const refreshAll=()=>refreshLive().then(fetchLiveScores).catch(()=>{});
-document.getElementById('liveBtn').addEventListener('click',refreshAll);
 // Language selector (top-right): re-render static text + dynamic views.
 document.querySelectorAll('#langSel button').forEach(b=>b.addEventListener('click',()=>{
   if(LANG===b.dataset.lang) return;
