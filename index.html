@@ -323,10 +323,10 @@
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
   @keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(255,70,85,.5)}70%{box-shadow:0 0 0 8px rgba(255,70,85,0)}100%{box-shadow:0 0 0 0 rgba(255,70,85,0)}}
   /* top live ticker */
-  .livebar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:9px 16px;width:fit-content;max-width:min(780px,92vw);margin:-4px auto 22px;
-    padding:11px 18px;border:1px solid var(--acc);border-radius:14px;background:rgba(255,70,85,.06);box-shadow:0 0 0 1px rgba(255,70,85,.25),0 8px 30px rgba(255,70,85,.15)}
+  .livebar{position:relative;display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:center;gap:9px 18px;width:fit-content;min-width:200px;max-width:min(780px,92vw);margin:20px auto 22px;
+    padding:24px 18px 15px;border:1px solid var(--acc);border-radius:14px;background:rgba(255,70,85,.06);box-shadow:0 0 0 1px rgba(255,70,85,.25),0 8px 30px rgba(255,70,85,.15)}
   .livebar[hidden]{display:none}
-  .livebar .lhead{display:inline-flex;align-items:center;gap:6px;color:#fff;background:var(--acc);font-weight:900;font-size:12px;letter-spacing:.08em;padding:4px 11px;border-radius:99px;animation:livepulse 1.5s ease-in-out infinite}
+  .livebar .lhead{position:absolute;top:0;left:50%;transform:translate(-50%,-50%);white-space:nowrap;display:inline-flex;align-items:center;gap:6px;color:#fff;background:var(--acc);font-weight:900;font-size:12px;letter-spacing:.08em;padding:4px 11px;border-radius:99px;animation:livepulse 1.5s ease-in-out infinite}
   .livebar .lm{display:flex;flex-direction:column;align-items:center;gap:3px}
   .livebar .lm .lmtop{display:inline-flex;align-items:center;gap:8px;font-size:16px;font-weight:800;color:var(--txt)}
   .livebar .lgoals{display:flex;flex-direction:column;align-items:center;gap:0;font-size:11px;color:var(--mut);line-height:1.45}
