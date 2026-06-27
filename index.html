@@ -1095,7 +1095,7 @@ function condHTML(A,B,hA,hD,hB){
   const nWinSeals=t=> note(ko?'('+FL(t)+' 승리 시 확정)':'('+FL(t)+' win seals it)');
   const nEdge   = note(ko?'(누가 이겨도 한국에 유리)':'(either winner gives Korea the edge)');
   const nDraw   = note(ko?'(비기면 확정)':'(a draw seals it)');
-  const nNeeded = note(ko?'(필요조건 — 확정은 아님)':'(needed — still not a lock)');
+  const nNeeded = note(ko?'(그래도 확정은 아님 — 점수 차도 충분해야)':'(still not a lock — the margin must be enough)');
   const nUsually=t=> note(ko?'('+FL(t)+' 승리도 대체로 충분)':'(a '+FL(t)+' win usually does too)');
   const nKind   = note(ko?'(또는 다른 곳에서 호재)':'(or a kind result elsewhere)');
   const nBest   = note(ko?'(최선의 시나리오 — 확정은 아님)':'(best chance — not a lock)');
