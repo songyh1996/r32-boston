@@ -308,9 +308,21 @@
   .btile .cond.condgood{color:var(--ok);font-weight:700}
   .btile .cond.condbad{color:var(--mut2);font-weight:700}
   .btile .bstat{font-size:12px;color:var(--mut2)}
-  .btile .bstat .live,.bingo .live{display:inline-block;color:#fff;background:var(--acc);font-size:10px;font-weight:800;letter-spacing:.04em;
-    padding:1px 8px;border-radius:99px;animation:pulse 1.4s ease-in-out infinite}
+  .btile .bstat .live,.bingo .live{display:inline-block;color:#fff;background:var(--acc);font-size:11px;font-weight:900;letter-spacing:.06em;
+    padding:2px 9px;border-radius:99px;animation:livepulse 1.5s ease-in-out infinite}
+  .btile .bstat .lscore{color:var(--txt);font-weight:800;font-size:13.5px;margin-left:3px}
+  .btile .bstat .lmin{color:#ff7a85;font-weight:800}
+  .btile.livecard{border:1px solid var(--acc);background:rgba(255,70,85,.05);box-shadow:0 0 0 1px rgba(255,70,85,.35),0 6px 28px rgba(255,70,85,.18)}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+  @keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(255,70,85,.5)}70%{box-shadow:0 0 0 8px rgba(255,70,85,0)}100%{box-shadow:0 0 0 0 rgba(255,70,85,0)}}
+  /* top live ticker */
+  .livebar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:9px 16px;max-width:780px;margin:-4px auto 22px;
+    padding:11px 18px;border:1px solid var(--acc);border-radius:14px;background:rgba(255,70,85,.06);box-shadow:0 0 0 1px rgba(255,70,85,.25),0 8px 30px rgba(255,70,85,.15)}
+  .livebar[hidden]{display:none}
+  .livebar .lhead{display:inline-flex;align-items:center;gap:6px;color:#fff;background:var(--acc);font-weight:900;font-size:12px;letter-spacing:.08em;padding:4px 11px;border-radius:99px;animation:livepulse 1.5s ease-in-out infinite}
+  .livebar .lm{display:inline-flex;align-items:center;gap:8px;font-size:16px;font-weight:800;color:var(--txt)}
+  .livebar .lm .lmin{color:#ff7a85;font-weight:800;font-size:13px}
+  .livebar .lm .gl{color:var(--mut2);font-size:11px;font-weight:700;letter-spacing:.02em}
 
   footer{margin-top:40px;color:var(--mut2);font-size:12.5px;text-align:center;line-height:1.7}
   footer a{color:var(--mut)}
@@ -334,6 +346,8 @@
     <p class="sub" data-i18n="sub">Live odds for South Korea to reach the Round of 32 — plus the full R32 bracket picture.<br>
       <b>Updated with live group-stage results.</b></p>
   </header>
+
+  <div class="livebar" id="liveBar" hidden></div>
 
   <div class="panel controls">
     <div class="ctop">
@@ -876,6 +890,19 @@ function render(){
   renderFocus();
   renderThird();
   renderBoard();
+  renderLiveBar();
+}
+// Prominent top ticker of matches that are LIVE right now (real in-play scores from ESPN).
+function renderLiveBar(){
+  const bar=document.getElementById('liveBar'); if(!bar) return;
+  const live=[];
+  for(const g in LIVE) (LIVE[g]||[]).forEach(m=>live.push({g, a:m[0], b:m[1], ga:m[2], gb:m[3], min:m[4]}));
+  if(!live.length){ bar.hidden=true; bar.innerHTML=''; return; }
+  bar.hidden=false;
+  bar.innerHTML='<span class="lhead">🔴 '+tt('LIVE NOW','지금 라이브')+'</span>'+
+    live.map(m=>'<span class="lm">'+(FLAGS[m.a]||'')+' '+m.ga+'–'+m.gb+' '+(FLAGS[m.b]||'')+
+      (m.min?' <span class="lmin">'+m.min+"'</span>":'')+
+      ' <span class="gl">'+tt('Grp ','그룹 ')+m.g+'</span></span>').join('');
 }
 
 /* ------------------- WHAT NEEDS TO HAPPEN (bingo board) -------- */
@@ -1040,12 +1067,12 @@ function renderBoard(){
     if(e.fav<=0.5){ cards.push({g, sortk:9.4e15, cls:'btile bad', p:prob(g),
       body:'<div class="cond">'+tt('✕ Can no longer help Korea','✕ 더 이상 한국에 도움 안 됨')+'</div><div class="bstat">'+tt('Not satisfied','불충족')+'</div>'}); return; }
     const d=e.decisive, m=d.m, cond=condHTML(m.a,m.b,d.hA,d.hD,d.hB);
-    let stat, sortk;
-    if(m.live){ sortk=-1; stat='<span class="live">🔴 LIVE</span> '+(FLAGS[m.a]||'')+' '+m.ox+'–'+m.oy+' '+(FLAGS[m.b]||'')+(m.clock?" · "+m.clock+"'":''); }
+    let stat, sortk, isLive=false;
+    if(m.live){ sortk=-1; isLive=true; stat='<span class="live">🔴 LIVE</span> <span class="lscore">'+(FLAGS[m.a]||'')+' '+m.ox+'–'+m.oy+' '+(FLAGS[m.b]||'')+'</span>'+(m.clock?' <span class="lmin">'+m.clock+"'</span>":''); }
     else { const ms=kickoffMs(m.date,m.time); sortk=isFinite(ms)?ms:7e15;
-      if(isFinite(ms)){ if(now<ms) stat=tt('⏰ not played yet · ','⏰ 경기 전 · ')+fmtKick(ms); else if(now<ms+150*60000) stat='<span class="live">🔴 LIVE</span> · '+tt('awaiting score','스코어 대기'); else stat=tt('awaiting result','결과 대기'); }
+      if(isFinite(ms)){ if(now<ms) stat=tt('⏰ not played yet · ','⏰ 경기 전 · ')+fmtKick(ms); else if(now<ms+150*60000){ isLive=true; stat='<span class="live">🔴 LIVE</span> · '+tt('awaiting score','스코어 대기'); } else stat=tt('awaiting result','결과 대기'); }
       else stat=tt('not played yet','경기 전')+(m.time?' · '+m.time:''); }
-    cards.push({g, sortk, cls:'btile', p:prob(g), body:'<div class="cond">'+cond+'</div><div class="bstat">'+stat+'</div>'});
+    cards.push({g, sortk, cls:'btile'+(isLive?' livecard':''), p:prob(g), body:'<div class="cond">'+cond+'</div><div class="bstat">'+stat+'</div>'});
   });
 
   host.innerHTML='';
