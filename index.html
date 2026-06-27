@@ -325,6 +325,28 @@
   .livebar .lm{display:inline-flex;align-items:center;gap:8px;font-size:16px;font-weight:800;color:var(--txt)}
   .livebar .lm .lmin{color:#ff7a85;font-weight:800;font-size:13px}
   .livebar .lm .gl{color:var(--mut2);font-size:11px;font-weight:700;letter-spacing:.02em}
+  /* goal celebration overlay */
+  .goalpop{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;
+    background:rgba(6,8,14,.72);backdrop-filter:blur(3px);cursor:pointer;opacity:0;transition:opacity .25s ease}
+  .goalpop[hidden]{display:none}
+  .goalpop.show{opacity:1}
+  .goalpop .gp-card{position:relative;overflow:hidden;text-align:center;padding:34px 40px 38px;border-radius:22px;max-width:88vw;
+    background:linear-gradient(160deg,#16203a,#0d1322);border:1px solid var(--acc);
+    box-shadow:0 0 0 1px rgba(255,70,85,.4),0 24px 80px rgba(255,70,85,.25);
+    transform:scale(.8) translateY(8px);transition:transform .35s cubic-bezier(.2,1.3,.4,1)}
+  .goalpop.show .gp-card{transform:scale(1) translateY(0)}
+  .gp-burst{font-size:54px;line-height:1;animation:gpkick .6s ease-out}
+  @keyframes gpkick{0%{transform:scale(.2) rotate(-25deg);opacity:0}60%{transform:scale(1.25) rotate(8deg)}100%{transform:scale(1) rotate(0)}}
+  .gp-goal{font-size:34px;font-weight:900;letter-spacing:.04em;color:var(--acc);margin:6px 0 10px;text-shadow:0 2px 18px rgba(255,70,85,.5)}
+  .gp-team{font-size:26px;font-weight:800;color:var(--txt)}
+  .gp-team b{font-weight:900}
+  .gp-who{font-size:18px;font-weight:700;color:#fff;margin-top:8px}
+  .gp-who .gp-min{color:#ff7a85;font-weight:900}
+  .gp-score{font-size:15px;font-weight:700;color:var(--mut);margin-top:12px}
+  .gp-conf{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .gp-conf i{position:absolute;top:-14px;width:8px;height:13px;border-radius:1px;opacity:.9;animation:gpfall 1.6s linear forwards}
+  @keyframes gpfall{0%{transform:translateY(-20px) rotate(0)}100%{transform:translateY(380px) rotate(420deg);opacity:0}}
+  @media(max-width:560px){ .goalpop .gp-card{padding:28px 24px 32px} .gp-goal{font-size:28px} .gp-team{font-size:22px} }
 
   footer{margin-top:40px;color:var(--mut2);font-size:12.5px;text-align:center;line-height:1.7}
   footer a{color:var(--mut)}
@@ -350,6 +372,7 @@
   </header>
 
   <div class="livebar" id="liveBar" hidden></div>
+  <div class="goalpop" id="goalPop" hidden></div>
 
   <div class="panel controls">
     <div class="ctop">
@@ -713,7 +736,7 @@ function simMatch(ra,rb){
 /* ---------------------- LIVE SCORES (ESPN) ---------------------- */
 // In-play + just-finished scores from ESPN's public scoreboard (no API key, CORS-enabled,
 // so it works straight from the browser). LIVE[group] = [[teamA,teamB,goalsA,goalsB,minute],…]
-let LIVE = {}, _liveSig = '', _trackMatch = {};
+let LIVE = {}, _liveSig = '', _trackMatch = {}, _scoreSeen = {}, _goalQ = [], _goalShowing = false;
 const ESPN_SB = d => 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates='+d;
 const _stripD = s => (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 const _nk = s => _stripD((s||'').toLowerCase()).replace(/[^a-z0-9]/g,'');
@@ -905,6 +928,39 @@ function renderLiveBar(){
       ' <span class="gl">'+tt('Grp ','그룹 ')+m.g+'</span></span>').join('');
 }
 
+/* ---- goal celebration overlay (fired from fetchLiveScores when a live score rises) ---- */
+function esc(s){ return (''+s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function confettiHTML(){
+  const cols=['#ff4655','#3fd07a','#ffd34e','#4ea3ff','#ff8ad8','#ffffff']; let s='';
+  for(let i=0;i<16;i++){ const l=Math.round(Math.random()*100), d=(Math.random()*0.5).toFixed(2),
+    c=cols[i%cols.length], r=Math.round(Math.random()*360);
+    s+='<i style="left:'+l+'%;background:'+c+';animation-delay:'+d+'s;transform:rotate('+r+'deg)"></i>'; }
+  return s;
+}
+function flushGoals(){
+  if(_goalShowing) return;
+  const goal=_goalQ.shift(); if(!goal) return;
+  const pop=document.getElementById('goalPop'); if(!pop) return;
+  _goalShowing=true;
+  const fl=FLAGS[goal.team]||'', ofl=FLAGS[goal.opp]||'';
+  const who = (goal.scorer||goal.min!=null)
+    ? '<div class="gp-who">'+(goal.scorer?esc(goal.scorer)+' ':'')+(goal.min!=null?'<span class="gp-min">'+goal.min+"'</span>":'')+'</div>'
+    : '';
+  pop.innerHTML='<div class="gp-card"><div class="gp-conf">'+confettiHTML()+'</div>'
+    +'<div class="gp-burst">⚽</div>'
+    +'<div class="gp-goal">'+tt('GOAL!','골!')+'</div>'
+    +'<div class="gp-team">'+fl+' <b>'+TN(goal.team)+'</b></div>'
+    + who
+    +'<div class="gp-score">'+fl+' '+goal.sa+'–'+goal.sb+' '+ofl+' · '+tt('Grp ','그룹 ')+goal.g+'</div>'
+    +'</div>';
+  pop.hidden=false; pop.classList.remove('show'); void pop.offsetWidth; pop.classList.add('show');
+  let tid;
+  const close=()=>{ if(!_goalShowing) return; _goalShowing=false; clearTimeout(tid); pop.onclick=null;
+    pop.classList.remove('show'); setTimeout(()=>{ pop.hidden=true; flushGoals(); }, 300); };
+  pop.onclick=close;
+  tid=setTimeout(close, 10000);   // 10 seconds, or tap to dismiss
+}
+
 /* ------------------- WHAT NEEDS TO HAPPEN (bingo board) -------- */
 function modalThird(g){ const tm=acc.tTeam[g]||{}; let mo='?',mc=-1; for(const t in tm){ if(tm[t]>mc){mc=tm[t];mo=t;} } return mo; }
 function kickoffMs(date,time){
@@ -1049,12 +1105,15 @@ function renderBoard(){
   const needed=Math.min(remaining.length, Math.max(0, remaining.length-(7-settledAbove)));
   const totalNeed=banked.length+needed;   // groups that must end with a 3rd weaker than Korea (always 4)
 
+  const elim = (banked.length + remaining.length) < 4;   // can't reach 4 favorable thirds → can't qualify
   document.getElementById('boardHead').innerHTML = remaining.length===0
     ? tt('<b>Every group is done.</b>','<b>모든 조가 끝났습니다.</b>')
     : needed===0
     ? tt('✅ <b>Korea is through</b> — enough groups already went their way.','✅ <b>한국 진출 확정</b> — 충분한 조가 이미 한국에 유리하게 끝났습니다.')
-    : tt('Korea needs <span class="need">'+needed+' of the '+remaining.length+'</span> groups still in play to go their way · ✅ <b>'+banked.length+'</b> satisfied'+(settledAbove?' · <span class="miss">✕ <b>'+settledAbove+'</b> missed</span>':'')+'.',
-         '한국은 남은 <span class="need">'+remaining.length+'개 조 중 '+needed+'개</span>가 유리하게 끝나야 합니다 · ✅ <b>'+banked.length+'</b>개 충족'+(settledAbove?' · <span class="miss">✕ <b>'+settledAbove+'</b>개 불충족</span>':'')+'.');
+    : elim
+    ? tt('✕ <b>Korea can no longer reach a top-8 spot</b> — too many groups went the other way.','✕ <b>한국 진출 불가</b> — 너무 많은 조가 한국과 반대로 끝났습니다.')
+    : tt('Korea needs just <span class="need">'+needed+' more</span> of the '+remaining.length+' groups still in play to clinch a top-8 spot · ✅ <b>'+banked.length+'</b> already secured'+(settledAbove?' · <span class="miss">✕ <b>'+settledAbove+'</b> missed</span>':'')+'.',
+         '한국은 남은 '+remaining.length+'개 조 중 <span class="need">'+needed+'개만 더</span> 유리하게 끝나면 진출 확정 · ✅ 이미 <b>'+banked.length+'</b>개 확보'+(settledAbove?' · <span class="miss">✕ <b>'+settledAbove+'</b>개 불충족</span>':'')+'.');
 
   // One consistent grid: pending cards (what's needed) first, then ✅ satisfied/secured (green),
   // then ✕ not-satisfied (red) — groups that finished with a 3rd-placer ABOVE Korea, or that
@@ -1348,6 +1407,7 @@ async function fetchLiveScores(){
   const dstr=off=>{ const d=new Date(Date.now()+off*86400000);
     return ''+d.getUTCFullYear()+String(d.getUTCMonth()+1).padStart(2,'0')+String(d.getUTCDate()).padStart(2,'0'); };
   const live={}, fin=[]; let seen=0;
+  const goalMeta={}, curScore={}, liveMin={}, pk=(x,y)=>[x,y].slice().sort().join(' ');
   for(const d of [dstr(-1),dstr(0),dstr(1)]){
     try{
       const res=await fetch(ESPN_SB(d),{cache:'no-store'}); if(!res.ok) continue;
@@ -1359,10 +1419,17 @@ async function fetchLiveScores(){
         const a=espnTeam((home.team||{}).displayName||(home.team||{}).name||(home.team||{}).location);
         const b=espnTeam((away.team||{}).displayName||(away.team||{}).name||(away.team||{}).location);
         if(!a||!b||a===b) return; const g=GROUP_OF[a]; if(!g||GROUP_OF[b]!==g) return;   // group-stage pair only
+        const key=pk(a,b);
+        // best-effort scorer capture from ESPN scoring plays (when the feed includes them)
+        const idN={}; if((home.team||{}).id!=null) idN[home.team.id]=a; if((away.team||{}).id!=null) idN[away.team.id]=b;
+        const plays=[]; (comp.details||[]).forEach(dt=>{ if(!dt||!dt.scoringPlay) return; const tn=idN[(dt.team||{}).id]; if(!tn) return;
+          const ath=(dt.athletesInvolved||[])[0]||{}, mc=(''+((dt.clock||{}).displayValue||'')).match(/(\d{1,3})/);
+          plays.push({team:tn, name:ath.displayName||ath.shortName||'', min:mc?+mc[1]:null}); });
+        goalMeta[key]={evId:ev.id, plays:plays.length?plays:((goalMeta[key]||{}).plays||[])};
         const ga=parseInt(home.score,10), gb=parseInt(away.score,10);
         const stt=(comp.status||{}).type||{}, state=stt.state||'';
         if(state==='post'){
-          if(isFinite(ga)&&isFinite(gb)){ fin.push([g,a,b,ga,gb]); seen++; }   // skip if score missing -> keep baseline
+          if(isFinite(ga)&&isFinite(gb)){ fin.push([g,a,b,ga,gb]); seen++; curScore[key]={[a]:ga,[b]:gb}; }   // skip if score missing -> keep baseline
         } else if(state==='in'){
           // Prefer the running clock ("67'"); fall back to half NAMES, never their ordinal digit
           // (so "2nd Half" -> ~70, not 2).
@@ -1375,6 +1442,7 @@ async function fetchLiveScores(){
           const ix=ex.findIndex(m=>(m[0]===a&&m[1]===b)||(m[0]===b&&m[1]===a));
           if(ix<0){ ex.push([a,b,gx,gy,mn]); seen++; }
           else if(mn>=ex[ix][4]) ex[ix]=[a,b,gx,gy,mn];   // newer snapshot wins across adjacent dates
+          curScore[key]={[a]:gx,[b]:gy}; liveMin[key]=mn;
         }
       });
     }catch(e){ /* skip this date */ }
@@ -1385,6 +1453,22 @@ async function fetchLiveScores(){
   const sig=JSON.stringify(fin)+'|'+JSON.stringify(live);
   if(sig===_liveSig) return false;
   _liveSig=sig;
+  // Detect goals: any team whose score rose since the last poll → celebrate. We skip the very
+  // first sighting of a match (no prior score) so loading the page never fires stale goals.
+  const newGoals=[];
+  for(const key in curScore){
+    const cur=curScore[key], prev=_scoreSeen[key];
+    if(prev) for(const tm in cur){
+      if(typeof prev[tm]==='number' && cur[tm]>prev[tm]){
+        const opp=Object.keys(cur).find(t=>t!==tm)||'';
+        const mt=goalMeta[key]||{}, mine=(mt.plays||[]).filter(pp=>pp.team===tm), sp=mine.length?mine[mine.length-1]:null;
+        newGoals.push({team:tm, opp, sa:cur[tm], sb:cur[opp], g:GROUP_OF[tm]||'',
+          scorer:(sp&&sp.name)||'', min:(sp&&sp.min!=null)?sp.min:(liveMin[key]!=null?liveMin[key]:null)});
+      }
+    }
+    _scoreSeen[key]=cur;
+  }
+  if(newGoals.length){ newGoals.forEach(go=>{ if(_goalQ.length<5) _goalQ.push(go); }); flushGoals(); }
   const pairIn=(arr,a,b)=>(arr||[]).some(m=>(m[0]===a&&m[1]===b)||(m[0]===b&&m[1]===a));
   const dropPair=(arr,a,b)=>{ if(arr) for(let i=arr.length-1;i>=0;i--){const m=arr[i]; if((m[0]===a&&m[1]===b)||(m[0]===b&&m[1]===a)) arr.splice(i,1);} };
   // Finished -> PLAYED (replace any prior copy). We deliberately do NOT mutate FIXTURES:
