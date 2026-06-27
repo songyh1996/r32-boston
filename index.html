@@ -1026,10 +1026,11 @@ function renderBoard(){
   NONA.forEach(g=>{
     if(done(g)){
       const pv=pivotalPlayed(g), cond=pv?condHTML(pv.m[0],pv.m[1],pv.hA,pv.hD,pv.hB):'';
+      const sc=pv?'<b>'+(FLAGS[pv.m[0]]||'')+' '+TN(pv.m[0])+' '+pv.m[2]+'–'+pv.m[3]+' '+(FLAGS[pv.m[1]]||'')+' '+TN(pv.m[1])+'</b>':'';
       if(prob(g)>=50) cards.push({g, sortk:9e15, cls:'btile good',
-        body:'<div class="cond condgood">✅ '+cond+'</div><div class="bstat">'+tt('met','조건 충족')+'</div>'});
+        body:'<div class="cond condgood">✅ '+cond+'</div><div class="bstat">'+sc+' · '+tt('met','조건 충족')+'</div>'});
       else cards.push({g, sortk:9.5e15, cls:'btile bad',
-        body:'<div class="cond">✕ '+cond+'</div><div class="bstat">'+tt('not met','조건 불충족')+'</div>'});
+        body:'<div class="cond">✕ '+cond+'</div><div class="bstat">'+sc+' · '+tt('not met','조건 불충족')+'</div>'});
       return;
     }
     const e=enumGroup(g); if(!e) return;
