@@ -239,8 +239,6 @@
   .scenrow .sh .lab{font-weight:800;font-size:14px}
   .scenrow .sh .lab .vn{color:var(--mut2);font-weight:600;font-size:12px;margin-left:7px}
   .scenrow .sh .pr{font-weight:900;color:var(--acc);font-variant-numeric:tabular-nums}
-  .scenrow.boston{box-shadow:inset 0 0 0 1px rgba(255,70,85,.45)}
-  .scenrow.boston .sh .pr{color:var(--acc2)}
   .scenrow .opps{display:flex;flex-wrap:wrap;gap:6px}
   .scenrow .opp{display:inline-flex;align-items:center;gap:5px;background:#0e0f12;border:1px solid var(--line);border-radius:99px;padding:3px 10px;font-size:12.5px;color:var(--mut)}
   .scenrow .opp b{color:var(--txt);font-variant-numeric:tabular-nums}
@@ -318,7 +316,7 @@
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
   @keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(255,70,85,.5)}70%{box-shadow:0 0 0 8px rgba(255,70,85,0)}100%{box-shadow:0 0 0 0 rgba(255,70,85,0)}}
   /* top live ticker */
-  .livebar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:9px 16px;max-width:780px;margin:-4px auto 22px;
+  .livebar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:9px 16px;width:fit-content;max-width:min(780px,92vw);margin:-4px auto 22px;
     padding:11px 18px;border:1px solid var(--acc);border-radius:14px;background:rgba(255,70,85,.06);box-shadow:0 0 0 1px rgba(255,70,85,.25),0 8px 30px rgba(255,70,85,.15)}
   .livebar[hidden]{display:none}
   .livebar .lhead{display:inline-flex;align-items:center;gap:6px;color:#fff;background:var(--acc);font-weight:900;font-size:12px;letter-spacing:.08em;padding:4px 11px;border-radius:99px;animation:livepulse 1.5s ease-in-out infinite}
@@ -409,12 +407,6 @@
           <select id="focusSel"></select></label>
       </div>
       <div class="reachbig"><b id="fReach">—</b><small data-i18n="reachR32">reach Round of 32</small></div>
-    </div>
-
-    <h2 class="sec"><span data-i18n="howFinish">How they finish Group</span> <span id="fGrp">A</span></h2>
-    <div class="panel" style="padding:16px 20px">
-      <div class="finishbars" id="fFinish"></div>
-      <p class="seatfoot" data-i18n="finishFoot">These four add up to 100%. Finishing 3rd only reaches the Round of 32 as one of the 8 best third-place teams — hence the reach rate above can be below 1st + 2nd + 3rd.</p>
     </div>
 
     <h2 class="sec" data-i18n="secPath">Their R32 path &amp; most likely opponent, by scenario</h2>
@@ -611,8 +603,6 @@ const KO_UI = {
   grpShareDesc:'보스턴의 3위 티켓은 공식 조합표에 따라 이 다섯 조 중 하나에서 옵니다. 시뮬레이션 비율:',
   secFocusOpp:'32강에서 누구와 만날까?',
   focusProjector:'32강 상대 예측기', projectOther:'다른 팀으로 보기:', reachR32:'32강 진출',
-  howFinish:'조별리그 최종 순위 — 그룹',
-  finishFoot:'네 항목 합계 100%. 3위로 마치면 최상위 8개 3위 팀에 들어야만 32강에 가므로, 위의 진출 확률이 1위+2위+3위 합보다 낮을 수 있습니다.',
   secPath:'시나리오별 32강 경로와 가장 유력한 상대',
   oppsHead:'🎯 가장 유력한 32강 상대',
   oppsDesc:'모든 경로(조 1위·2위·3위 통과)를 통틀어 가장 만날 가능성이 큰 팀:',
@@ -736,7 +726,7 @@ function simMatch(ra,rb){
 /* ---------------------- LIVE SCORES (ESPN) ---------------------- */
 // In-play + just-finished scores from ESPN's public scoreboard (no API key, CORS-enabled,
 // so it works straight from the browser). LIVE[group] = [[teamA,teamB,goalsA,goalsB,minute],…]
-let LIVE = {}, _liveSig = '', _trackMatch = {}, _scoreSeen = {}, _goalQ = [], _goalShowing = false;
+let LIVE = {}, _liveSig = '', _trackMatch = {}, _scoreSeen = {}, _goalQ = [], _goalShowing = false, _lastUpdate = null;
 const ESPN_SB = d => 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates='+d;
 const _stripD = s => (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 const _nk = s => _stripD((s||'').toLowerCase()).replace(/[^a-z0-9]/g,'');
@@ -899,8 +889,9 @@ function run(){
     else{
       const ms=(performance.now()-t0).toFixed(0);
       const liveN=Object.values(LIVE).reduce((s,a)=>s+a.length,0);
-      document.getElementById('status').textContent=tt('50,000 simulations · played through '+RESULTS_DATE+(liveN?' · 🔴 '+liveN+' live now':'')+' · '+ms+' ms.',
-        '50,000회 시뮬레이션 · '+RESULTS_DATE+'까지 반영'+(liveN?' · 🔴 '+liveN+'경기 진행 중':'')+' · '+ms+' ms');
+      const upd=_lastUpdate?fmtClock(_lastUpdate):'';
+      document.getElementById('status').textContent=tt('50,000 simulations · played through '+RESULTS_DATE+(liveN?' · 🔴 '+liveN+' live now':'')+(upd?' · updated '+upd:'')+' · '+ms+' ms.',
+        '50,000회 시뮬레이션 · '+RESULTS_DATE+'까지 반영'+(liveN?' · 🔴 '+liveN+'경기 진행 중':'')+(upd?' · '+upd+' 갱신':'')+' · '+ms+' ms');
       if(btn) btn.disabled=false;
       render();
     }
@@ -969,12 +960,18 @@ function kickoffMs(date,time){
   return Date.parse(date+'T'+mt[1].padStart(2,'0')+':'+mt[2]+':00'+sign+oh+':00');
 }
 function fmtKick(ms){ try{ return new Date(ms).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }catch(e){ return ''; } }
+function fmtClock(ms){ try{ return new Date(ms).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}); }catch(e){ return ''; } }
 function groupLive(g){ if((LIVE[g]||[]).length) return true; const now=Date.now(); return (FIXTURES[g]||[]).some(m=>{const ms=kickoffMs(m[2],m[3]); return isFinite(ms)&&now>=ms&&now<ms+150*60000;}); }
 // Standings from the played matches only (no simulation).
-function baseStandObj(g){
+function baseStandObj(g, withLive){
   const st={}; GROUPS[g].forEach(t=>st[t]={pts:0,gf:0,ga:0});
-  (lockResults?(PLAYED[g]||[]):[]).forEach(([a,b,x,y])=>{ st[a].gf+=x;st[a].ga+=y;st[b].gf+=y;st[b].ga+=x;
-    if(x>y)st[a].pts+=3; else if(y>x)st[b].pts+=3; else {st[a].pts++;st[b].pts++;} });
+  const add=(a,b,x,y)=>{ if(st[a]&&st[b]){ st[a].gf+=x;st[a].ga+=y;st[b].gf+=y;st[b].ga+=x;
+    if(x>y)st[a].pts+=3; else if(y>x)st[b].pts+=3; else {st[a].pts++;st[b].pts++;} } };
+  (lockResults?(PLAYED[g]||[]):[]).forEach(([a,b,x,y])=>add(a,b,x,y));
+  // Optionally fold the live score in as a provisional result, so a standing reflects what it
+  // would be if the current in-progress score held — instead of waiting for the final whistle.
+  if(withLive&&lockResults){ const has=(a,b)=>(PLAYED[g]||[]).some(m=>(m[0]===a&&m[1]===b)||(m[0]===b&&m[1]===a));
+    (LIVE[g]||[]).forEach(m=>{ if(!has(m[0],m[1])) add(m[0],m[1],m[2],m[3]); }); }
   return st;
 }
 // Deterministically enumerate every scoreline of a group's remaining matches and find,
@@ -1112,8 +1109,8 @@ function renderBoard(){
     ? tt('✅ <b>Korea is through</b> — enough groups already went their way.','✅ <b>한국 진출 확정</b> — 충분한 조가 이미 한국에 유리하게 끝났습니다.')
     : elim
     ? tt('✕ <b>Korea can no longer reach a top-8 spot</b> — too many groups went the other way.','✕ <b>한국 진출 불가</b> — 너무 많은 조가 한국과 반대로 끝났습니다.')
-    : tt('Korea needs just <span class="need">'+needed+' more</span> of the '+remaining.length+' groups still in play to clinch a top-8 spot · ✅ <b>'+banked.length+'</b> already secured'+(settledAbove?' · <span class="miss">✕ <b>'+settledAbove+'</b> missed</span>':'')+'.',
-         '한국은 남은 '+remaining.length+'개 조 중 <span class="need">'+needed+'개만 더</span> 유리하게 끝나면 진출 확정 · ✅ 이미 <b>'+banked.length+'</b>개 확보'+(settledAbove?' · <span class="miss">✕ <b>'+settledAbove+'</b>개 불충족</span>':'')+'.');
+    : tt('Korea advances if <b>'+totalNeed+' of '+NONA.length+'</b> groups finish in its favor · ✅ <b>'+banked.length+'</b> secured · <span class="need">'+needed+' more</span> needed'+(settledAbove?' · <span class="miss">✕ <b>'+settledAbove+'</b> missed</span>':'')+'.',
+         '한국은 <b>'+NONA.length+'개 조 중 '+totalNeed+'개</b>가 유리하게 끝나야 진출 · ✅ <b>'+banked.length+'</b>개 확보 · <span class="need">'+needed+'개</span> 더 필요'+(settledAbove?' · <span class="miss">✕ <b>'+settledAbove+'</b>개 불충족</span>':'')+'.');
 
   // One consistent grid: pending cards (what's needed) first, then ✅ satisfied/secured (green),
   // then ✕ not-satisfied (red) — groups that finished with a 3rd-placer ABOVE Korea, or that
@@ -1163,11 +1160,11 @@ function renderThird(){
   document.getElementById('koQual').textContent=koQ.toFixed(0)+'%';
   document.getElementById('koGauge').style.width=Math.max(2,koQ).toFixed(1)+'%';
 
-  // Real CURRENT third-place table: each group's current 3rd-placer with their ACTUAL points
-  // so far (finished groups = final; mid-way groups = points from games already played).
-  // Nothing is projected. Ranked by the real rule: points → goal difference → goals.
+  // CURRENT third-place table: each group's 3rd-placer with their points so far — and for a group
+  // with a match in progress, the LIVE score is folded in as a provisional result (so the standing
+  // shows what it would be if the current score held). Ranked points → goal difference → goals.
   const rows=Object.keys(GROUPS).map(g=>{
-    const st=baseStandObj(g);
+    const st=baseStandObj(g, true);
     const tbl=GROUPS[g].map(t=>({team:t,pts:st[t].pts,gd:st[t].gf-st[t].ga,gf:st[t].gf}))
                        .sort((a,b)=> b.pts-a.pts || b.gd-a.gd || b.gf-a.gf);
     const third=tbl[2], done=(PLAYED[g]||[]).length===6;
@@ -1193,15 +1190,15 @@ function renderThird(){
                      '한국은 3위 12팀 중 <b>'+koRank+'위</b> — 상위 8위 안. <b>진출!</b>')
                 : tt('Korea is <b>'+koRank+'th</b> of 12 thirds — outside the top 8.',
                      '한국은 3위 12팀 중 <b>'+koRank+'위</b> — 상위 8위 밖.'))
-        : tt('By <b>points so far</b>, Korea is <b>'+koRank+'th</b> of the 12 thirds — '+(koIn?'inside':'below')+' the top 8. <b>'+nPlayG+'</b> group'+(nPlayG>1?'s are':' is')+' still mid-way, so the teams around Korea can still move on their last game. Korea’s final chance: <b>'+koQ.toFixed(0)+'%</b>.',
-             '<b>현재까지 승점</b> 기준 한국은 3위 12팀 중 <b>'+koRank+'위</b> — 상위 8위 '+(koIn?'안':'밖')+'입니다. 아직 <b>'+nPlayG+'개 조</b>가 진행 중이라 주변 팀들이 마지막 경기로 순위가 바뀔 수 있어요. 한국의 최종 진출 확률은 <b>'+koQ.toFixed(0)+'%</b>.'))
+        : tt('By the <b>current score</b> (live matches included), Korea is <b>'+koRank+'th</b> of the 12 thirds — '+(koIn?'inside':'below')+' the top 8. <b>'+nPlayG+'</b> group'+(nPlayG>1?'s are':' is')+' still mid-way, so the teams around Korea can still move on their last game. Korea’s final chance: <b>'+koQ.toFixed(0)+'%</b>.',
+             '<b>현재 스코어</b>(진행 중 경기 포함) 기준 한국은 3위 12팀 중 <b>'+koRank+'위</b> — 상위 8위 '+(koIn?'안':'밖')+'입니다. 아직 <b>'+nPlayG+'개 조</b>가 진행 중이라 주변 팀들이 마지막 경기로 순위가 바뀔 수 있어요. 한국의 최종 진출 확률은 <b>'+koQ.toFixed(0)+'%</b>.'))
     : tt('Korea can still finish anywhere in Group '+kg+'; if 3rd, they must be a <b>top-8 third</b>.',
          '한국은 아직 그룹 '+kg+'에서 어떤 순위로도 마칠 수 있고, 3위면 <b>최상위 8개 3위</b>에 들어야 합니다.');
 
   const callout=document.getElementById('koCallout');
   if(callout) callout.innerHTML = nPlayG>0
-    ? tt('Each group’s current 3rd-placer with their <b>actual points so far</b>, ranked <b>points → goal difference → goals</b>. “종료” = group finished; the others are still mid-way (games left) so their order can still change. The % is each group’s chance to send a qualifying third. Top 8 advance.',
-         '각 조의 현재 3위와 <b>지금까지의 실제 승점</b>을 <b>승점 → 골득실 → 득점</b> 순으로 정렬했습니다. ‘종료’=경기 끝난 조이고, 나머지는 아직 진행 중(경기 남음)이라 순위가 바뀔 수 있어요. %는 각 조가 진출 3위를 낼 확률. 상위 8팀 진출.')
+    ? tt('Each group’s current 3rd-placer, ranked <b>points → goal difference → goals</b>. A match in progress is counted at its <b>current live score</b> (provisional). “종료” = group finished; the others are still mid-way so their order can still change. The % is each group’s chance to send a qualifying third. Top 8 advance.',
+         '각 조의 현재 3위를 <b>승점 → 골득실 → 득점</b> 순으로 정렬했습니다. 진행 중인 경기는 <b>현재 라이브 스코어</b> 기준으로 잠정 반영돼요. ‘종료’=경기 끝난 조이고, 나머지는 진행 중이라 순위가 바뀔 수 있어요. %는 각 조가 진출 3위를 낼 확률. 상위 8팀 진출.')
     : tt('Every third-placer’s final points, ranked points → goal difference → goals. Top 8 advance.',
          '각 3위의 최종 승점을 승점 → 골득실 → 득점 순으로 정렬. 상위 8팀 진출.');
 
@@ -1246,17 +1243,9 @@ function renderFocus(){
   const n=acc.n||1, fg=GROUP_OF[FOCUS];
   document.getElementById('fFlag').textContent=FLAGS[FOCUS]||'🏳️';
   document.getElementById('fName').textContent=TN(FOCUS);
-  document.getElementById('fGrp').textContent=fg;
 
-  // Finish distribution (+ eliminated cell)
   const reached=Object.values(acc.fRows).reduce((s,v)=>s+v,0);
   const elim=n-reached;
-  const fb=document.getElementById('fFinish'); fb.innerHTML='';
-  [tt('Win group','조 1위'),tt('Runner-up','조 2위'),tt('3rd place','3위'),tt('4th place','4위')].forEach((lab,i)=>{   // partition of group finish = 100%
-    const d=document.createElement('div'); d.className='fb'+(i===0?' win':'');
-    d.innerHTML='<div class="v">'+(100*acc.fFinish[i]/n).toFixed(0)+'%</div><div class="l">'+lab+'</div>';
-    fb.appendChild(d);
-  });
   document.getElementById('fReach').textContent=(100*reached/n).toFixed(0)+'%';
 
   // Aggregate fRows -> byMatch (scenario) and overall opponent totals
@@ -1363,7 +1352,8 @@ function renderResultsPanel(){
     });
     blk.innerHTML=h; grid.appendChild(blk);
   });
-  const s=document.getElementById('resultsSummary'); if(s) s.textContent=tt('through '+RESULTS_DATE+' · '+count+' matches played', RESULTS_DATE+'까지 · '+count+'경기 완료');
+  const upd=_lastUpdate?fmtClock(_lastUpdate):'';
+  const s=document.getElementById('resultsSummary'); if(s) s.textContent=tt('through '+RESULTS_DATE+' · '+count+' matches played'+(upd?' · updated '+upd:''), RESULTS_DATE+'까지 · '+count+'경기 완료'+(upd?' · '+upd+' 갱신':''));
   const tag=document.getElementById('resTag'); if(tag) tag.textContent='('+RESULTS_DATE+')';
 }
 async function refreshLive(){
@@ -1407,7 +1397,7 @@ async function fetchLiveScores(){
   const dstr=off=>{ const d=new Date(Date.now()+off*86400000);
     return ''+d.getUTCFullYear()+String(d.getUTCMonth()+1).padStart(2,'0')+String(d.getUTCDate()).padStart(2,'0'); };
   const live={}, fin=[]; let seen=0;
-  const goalMeta={}, curScore={}, liveMin={}, pk=(x,y)=>[x,y].slice().sort().join(' ');
+  const goalMeta={}, curScore={}, liveMin={}, pk=(x,y)=>[x,y].slice().sort().join('|');
   for(const d of [dstr(-1),dstr(0),dstr(1)]){
     try{
       const res=await fetch(ESPN_SB(d),{cache:'no-store'}); if(!res.ok) continue;
@@ -1448,10 +1438,11 @@ async function fetchLiveScores(){
     }catch(e){ /* skip this date */ }
   }
   if(!seen) return false;
+  _lastUpdate=Date.now();   // a successful pull — stamps the "updated HH:MM" indicator
   // Skip the (expensive) re-run when ESPN returns the same scores/minutes as last poll, so we
   // can poll often (every 20s) for snappy updates without burning CPU on identical data.
   const sig=JSON.stringify(fin)+'|'+JSON.stringify(live);
-  if(sig===_liveSig) return false;
+  if(sig===_liveSig){ renderResultsPanel(); return false; }   // unchanged data: still refresh the "updated" time
   _liveSig=sig;
   // Detect goals: any team whose score rose since the last poll → celebrate. We skip the very
   // first sighting of a match (no prior score) so loading the page never fires stale goals.
