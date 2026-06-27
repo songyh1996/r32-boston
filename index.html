@@ -298,7 +298,8 @@
   .btile.dead{border-style:solid;opacity:.5}
   .btile .bh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:7px}
   .btile .bg{font-weight:800;font-size:14px}
-  .btile .bp{font-weight:900;font-variant-numeric:tabular-nums;font-size:14px;color:var(--mut2)}
+  .btile .bp{font-weight:900;font-variant-numeric:tabular-nums;font-size:15px;color:var(--mut);text-align:right;line-height:1.1}
+  .btile .bp .bpl{display:block;font-size:9px;font-weight:700;color:var(--mut2);letter-spacing:.03em}
   .btile.good .bp{color:var(--ok)}
   .btile.good .bstat{color:var(--ok);font-weight:700}
   .btile .cond{font-size:14.5px;font-weight:500;line-height:1.45;margin:2px 0 8px;color:var(--mut)}
@@ -1034,9 +1035,9 @@ function renderBoard(){
       return;
     }
     const e=enumGroup(g); if(!e) return;
-    if(e.fav>=99.5){ cards.push({g, sortk:9e15, cls:'btile good',
+    if(e.fav>=99.5){ cards.push({g, sortk:9e15, cls:'btile good', p:prob(g),
       body:'<div class="cond condgood">'+tt('✅ Secured — going Korea’s way','✅ 확정 — 한국에 유리')+'</div>'}); return; }
-    if(e.fav<=0.5){ cards.push({g, sortk:9.4e15, cls:'btile bad',
+    if(e.fav<=0.5){ cards.push({g, sortk:9.4e15, cls:'btile bad', p:prob(g),
       body:'<div class="cond">'+tt('✕ Can no longer help Korea','✕ 더 이상 한국에 도움 안 됨')+'</div><div class="bstat">'+tt('Not satisfied','불충족')+'</div>'}); return; }
     const d=e.decisive, m=d.m, cond=condHTML(m.a,m.b,d.hA,d.hD,d.hB);
     let stat, sortk;
@@ -1044,13 +1045,14 @@ function renderBoard(){
     else { const ms=kickoffMs(m.date,m.time); sortk=isFinite(ms)?ms:7e15;
       if(isFinite(ms)){ if(now<ms) stat=tt('⏰ not played yet · ','⏰ 경기 전 · ')+fmtKick(ms); else if(now<ms+150*60000) stat='<span class="live">🔴 LIVE</span> · '+tt('awaiting score','스코어 대기'); else stat=tt('awaiting result','결과 대기'); }
       else stat=tt('not played yet','경기 전')+(m.time?' · '+m.time:''); }
-    cards.push({g, sortk, cls:'btile', body:'<div class="cond">'+cond+'</div><div class="bstat">'+stat+'</div>'});
+    cards.push({g, sortk, cls:'btile', p:prob(g), body:'<div class="cond">'+cond+'</div><div class="bstat">'+stat+'</div>'});
   });
 
   host.innerHTML='';
   cards.sort((a,b)=>a.sortk-b.sortk).forEach(o=>{
     const tile=document.createElement('div'); tile.className=o.cls;
-    tile.innerHTML='<div class="bh"><div class="bg">'+tt('Group ','그룹 ')+o.g+'</div></div>'+o.body;
+    const pp = o.p!=null ? '<div class="bp">'+o.p.toFixed(0)+'%<span class="bpl">'+tt('chance','성공률')+'</span></div>' : '';
+    tile.innerHTML='<div class="bh"><div class="bg">'+tt('Group ','그룹 ')+o.g+'</div>'+pp+'</div>'+o.body;
     host.appendChild(tile);
   });
 }
