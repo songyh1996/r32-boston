@@ -1117,8 +1117,20 @@ function condHTML(A,B,hA,hD,hB,marg){
   if(suf[0]&&dead[1]&&dead[2]) return beat(A,B);
   if(suf[2]&&dead[0]&&dead[1]) return beat(B,A);
   if(suf[1]&&dead[0]&&dead[2]) return drawc;
-  if(dead[1]&&!dead[0]&&!dead[2])               // a draw eliminates Korea -> someone must win
+  if(dead[1]&&!dead[0]&&!dead[2]){              // a draw eliminates Korea -> someone must win
+    if(marg){   // ...but a narrow win by one side may not help — spell out each side's needed margin
+      const sideN=sign=>{ const cum=N=>{let f=0,t=0;for(const dk in marg){const dd=+dk;if(sign>0?dd>=N:dd<=-N){f+=marg[dk][0];t+=marg[dk][1];}}return t?100*f/t:0;};
+        let ceil=0; for(let n=1;n<=7;n++) ceil=Math.max(ceil,cum(n));
+        for(let n=1;n<=7;n++) if(cum(n)>=ceil-4) return n; return 1; };
+      const nA=sideN(1), nB=sideN(-1);
+      if(nA>1||nB>1){   // the "either winner helps" shorthand would be misleading here
+        const cl=(t,n,tail)=> FL(t)+sp(t)+(n>1?' <b>'+n+'골 차 이상</b>으로':'')+(tail?' 이겨야 함':' 이기거나');
+        const clEn=(t,n)=> FL(t)+(n>1?' winning by <b>'+n+'+</b>':' winning');
+        return ko ? cl(A,nA,false)+', '+cl(B,nB,true) : clEn(A,nA)+' or '+clEn(B,nB)+' gets Korea through';
+      }
+    }
     return orWin+(suf[0]?nWinSeals(A):suf[2]?nWinSeals(B):nEdge);
+  }
   if(dead[0]&&!dead[1]&&!dead[2]) return avoid(B,A)+(suf[1]?nDraw:'');   // A winning kills it
   if(dead[2]&&!dead[0]&&!dead[1]) return avoid(A,B)+(suf[1]?nDraw:'');   // B winning kills it
   const help=[['A',hA],['D',hD],['B',hB]].filter(x=>x[1]>Z);            // only one outcome helps at all
