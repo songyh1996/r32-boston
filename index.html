@@ -254,6 +254,9 @@
   .qside{display:flex;align-items:center;gap:16px}
   .qside .fflag{font-size:50px;line-height:1}
   .qbig b{font-size:40px;font-weight:900;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  body.farewell #koQual{-webkit-text-fill-color:initial;background:none;color:initial;font-size:46px}
+  body.farewell .qgaugefill{background:linear-gradient(90deg,#3f80ff,#ff4655,#3fd07a)}
+  body.farewell header.hero{background:radial-gradient(120% 80% at 50% 0,rgba(63,128,255,.10),transparent 60%)}
   .qbig small{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut2);font-weight:700}
   .qgauge{flex:1 1 240px;height:14px;background:#0e0f12;border:1px solid var(--line);border-radius:99px;overflow:hidden;min-width:200px}
   .qgaugefill{height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .6s cubic-bezier(.2,.7,.2,1)}
@@ -912,7 +915,20 @@ function run(){
 
 /* ----------------------------- RENDER --------------------------- */
 function pct(c){ return 100*(c||0)/acc.n; }
+// Hero copy — flips to a farewell once Korea's R32 hope is mathematically gone.
+function setHero(fw){
+  const h1=document.querySelector('header.hero h1'), sub=document.querySelector('header.hero .sub'), bd=document.querySelector('header.hero .badge');
+  if(h1) h1.innerHTML = fw ? tt('Thank you, <span class="b">Taegeuk Warriors</span>','<span class="b">태극전사</span>, 수고하셨습니다')
+                           : tt('Korea\'s Road to <span class="b">R32</span>','대한민국의 <span class="b">R32</span> 여정');
+  if(sub) sub.innerHTML = fw ? tt('South Korea\'s 2026 World Cup journey ends here.<br><b>Thank you for cheering to the very end. 🇰🇷❤️</b>','대한민국의 2026 월드컵 여정이 여기서 막을 내립니다.<br><b>끝까지 함께 응원해 주셔서 감사합니다. 🇰🇷❤️</b>')
+                            : tt('Live odds for South Korea to reach the Round of 32 — plus the full R32 bracket picture.<br><b>Updated with live group-stage results.</b>','대한민국의 32강 진출 실시간 확률 — R32 대진 전망까지.<br><b>조별리그 라이브 결과 반영.</b>');
+  if(bd) bd.textContent = fw ? tt('FIFA World Cup 2026 · End of the road','FIFA 월드컵 2026 · 여정의 끝')
+                             : tt('FIFA World Cup 2026 · Road to the Round of 32','FIFA 월드컵 2026 · 32강을 향한 여정');
+}
 function render(){
+  const fw=koEliminated();
+  document.body.classList.toggle('farewell', fw);
+  setHero(fw);
   renderFocus();
   renderThird();
   renderBoard();
@@ -1012,6 +1028,19 @@ function liveFavorable(g){
   const rows=GROUPS[g].map(t=>({pts:st[t].pts,gd:st[t].gf-st[t].ga,gf:st[t].gf})).sort((p,q)=>q.pts-p.pts||q.gd-p.gd||q.gf-p.gf);
   const th=rows[2];
   return th.pts<koP || (th.pts===koP&&th.gd<koGd) || (th.pts===koP&&th.gd===koGd&&th.gf<koGf);
+}
+// Is South Korea's R32 hope mathematically over? (group A done + can't be top-2 and can't reach a
+// top-8 third-place finish). Drives the farewell mode across the page.
+function koEliminated(){
+  const kg='A';
+  if(!(lockResults && (PLAYED[kg]||[]).length===6)) return false;   // group A not decided yet
+  const st=baseStandObj(kg,true), ar=GROUPS[kg].map(t=>({t,pts:st[t].pts,gd:st[t].gf-st[t].ga,gf:st[t].gf})).sort((p,q)=>q.pts-p.pts||q.gd-p.gd||q.gf-p.gf);
+  const pos=ar.findIndex(r=>r.t==='South Korea')+1;
+  if(pos<=2) return false;   // through as winner / runner-up
+  if(pos===4) return true;   // not even a third-placer
+  const NONA=Object.keys(GROUPS).filter(g=>g!=='A'), done=g=>(PLAYED[g]||[]).length===6;
+  const reach=NONA.filter(g=>!done(g)).length + NONA.filter(g=>done(g)&&liveFavorable(g)).length;
+  return reach<4;            // can't get 4 weaker thirds -> can't make the top-8 cut
 }
 // Deterministically enumerate every scoreline of a group's remaining matches and find,
 // per match, the share of outcomes where that group's 3rd-placer ends WEAKER than Korea.
@@ -1164,7 +1193,9 @@ function renderBoard(){
   const totalNeed=banked.length+needed;   // groups that must end with a 3rd weaker than Korea (always 4)
 
   const elim = (banked.length + remaining.length) < 4;   // can't reach 4 favorable thirds → can't qualify
-  document.getElementById('boardHead').innerHTML = remaining.length===0
+  document.getElementById('boardHead').innerHTML = koEliminated()
+    ? tt('The result is final now — but what a journey. <b>Thank you, Taegeuk Warriors.</b>','이제 결과는 바뀌지 않습니다. 그래도 끝까지 멋진 여정이었습니다. <b>태극전사, 수고하셨습니다.</b>')
+    : remaining.length===0
     ? tt('<b>Every group is done.</b>','<b>모든 조가 끝났습니다.</b>')
     : needed===0
     ? tt('✅ <b>Korea is through</b> — enough groups already went their way.','✅ <b>한국 진출 확정</b> — 충분한 조가 이미 한국에 유리하게 끝났습니다.')
@@ -1265,6 +1296,19 @@ function renderThird(){
          '각 조의 현재 3위를 <b>승점 → 골득실 → 득점</b> 순으로 정렬했습니다. 진행 중인 경기는 <b>현재 라이브 스코어</b> 기준으로 잠정 반영돼요. ‘종료’=경기 끝난 조이고, 나머지는 진행 중이라 순위가 바뀔 수 있어요. %는 각 조가 진출 3위를 낼 확률. 상위 8팀 진출.')
     : tt('Every third-placer’s final points, ranked points → goal difference → goals. Top 8 advance.',
          '각 3위의 최종 승점을 승점 → 골득실 → 득점 순으로 정렬. 상위 8팀 진출.');
+
+  if(koEliminated()){   // farewell: Korea is out — soften the whole card into a thank-you
+    const ar=GROUPS[kg].map(t=>{const s=baseStandObj(kg,true)[t]; return {t,pts:s.pts,gd:s.gf-s.ga};}).sort((a,b)=>b.pts-a.pts||b.gd-a.gd);
+    const pos=ar.findIndex(r=>r.t===KO)+1, ord=pos===1?'st':pos===2?'nd':pos===3?'rd':'th';
+    const q=document.getElementById('koQual'); if(q) q.textContent='🇰🇷';
+    const gg=document.getElementById('koGauge'); if(gg) gg.style.width='100%';
+    const lbl=document.querySelector('[data-i18n="chanceReach"]'); if(lbl) lbl.textContent=tt('thank you, warriors','수고하셨습니다');
+    document.getElementById('koStatus').innerHTML = tt(TN(KO)+' · Group '+kg+' · finished <b>'+pos+ord+'</b> — out of the Round of 32',
+                                                       TN(KO)+' · 그룹 '+kg+' · <b>'+pos+'위</b>로 마감 — 32강 진출 무산');
+    document.getElementById('koNote').innerHTML = tt('Korea came up just short of the top-8 third-place cut. But every match, the Taegeuk Warriors gave everything. Until next time — <b>thank you for an unforgettable run.</b> 🇰🇷❤️',
+                                                     '12개 조 3위 경쟁에서 아쉽게 마지막 관문을 넘지 못했습니다. 하지만 매 경기 끝까지 투혼을 불태운 태극전사들에게 뜨거운 박수를 보냅니다. 다음을 기약하며 — <b>정말 수고 많으셨습니다.</b> 🇰🇷❤️');
+    if(callout) callout.innerHTML = tt('Where Korea finished among the 12 third-placed teams:','12개 조 3위 팀들 사이에서 한국의 최종 순위:');
+  }
 
   const wrap=document.getElementById('thirdRace'); wrap.innerHTML='';
   rows.forEach((r,i)=>{
