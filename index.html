@@ -318,6 +318,8 @@
   .btile .bstat .lscore{color:var(--txt);font-weight:800;font-size:13.5px;margin-left:3px}
   .btile .bstat .lmin{color:#ff7a85;font-weight:800}
   .btile.livecard{border:1px solid var(--acc);background:rgba(255,70,85,.05);box-shadow:0 0 0 1px rgba(255,70,85,.35),0 6px 28px rgba(255,70,85,.18)}
+  .btile.livecard.livegood{border-color:var(--ok);background:rgba(63,208,122,.06);box-shadow:0 0 0 1px rgba(63,208,122,.4),0 6px 28px rgba(63,208,122,.18)}
+  .btile .okmark{color:var(--ok);font-weight:800}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
   @keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(255,70,85,.5)}70%{box-shadow:0 0 0 8px rgba(255,70,85,0)}100%{box-shadow:0 0 0 0 rgba(255,70,85,0)}}
   /* top live ticker */
@@ -1002,6 +1004,15 @@ function baseStandObj(g, withLive){
     (LIVE[g]||[]).forEach(m=>{ if(!has(m[0],m[1])) add(m[0],m[1],m[2],m[3]); }); }
   return st;
 }
+// Would this group be favorable for Korea right now, if its current live score held? Used to
+// tint a LIVE board card green when the condition is already being met (not just red-because-live).
+function liveFavorable(g){
+  const ka=baseStandObj('A')['South Korea'], koP=ka.pts, koGd=ka.gf-ka.ga, koGf=ka.gf;
+  const st=baseStandObj(g, true);   // played + current live scores folded in as if final
+  const rows=GROUPS[g].map(t=>({pts:st[t].pts,gd:st[t].gf-st[t].ga,gf:st[t].gf})).sort((p,q)=>q.pts-p.pts||q.gd-p.gd||q.gf-p.gf);
+  const th=rows[2];
+  return th.pts<koP || (th.pts===koP&&th.gd<koGd) || (th.pts===koP&&th.gd===koGd&&th.gf<koGf);
+}
 // Deterministically enumerate every scoreline of a group's remaining matches and find,
 // per match, the share of outcomes where that group's 3rd-placer ends WEAKER than Korea.
 function enumGroup(g){
@@ -1173,12 +1184,13 @@ function renderBoard(){
     if(e.fav<=0.5){ cards.push({g, sortk:9.4e15, cls:'btile bad', p:prob(g),
       body:'<div class="cond">'+tt('✕ Can no longer help Korea','✕ 더 이상 한국에 도움 안 됨')+'</div><div class="bstat">'+tt('Not satisfied','불충족')+'</div>'}); return; }
     const d=e.decisive, m=d.m, cond=condHTML(m.a,m.b,d.hA,d.hD,d.hB,d.marg);
-    let stat, sortk, isLive=false;
-    if(m.live){ sortk=-1; isLive=true; stat='<span class="live">🔴 LIVE</span> <span class="lscore">'+(FLAGS[m.a]||'')+' '+m.ox+'–'+m.oy+' '+(FLAGS[m.b]||'')+'</span>'+(m.clock?' <span class="lmin">'+m.clock+"'</span>":''); }
+    let stat, sortk, isLive=false, lg=false;
+    if(m.live){ sortk=-1; isLive=true; lg=liveFavorable(g);
+      stat='<span class="live">🔴 LIVE</span> <span class="lscore">'+(FLAGS[m.a]||'')+' '+m.ox+'–'+m.oy+' '+(FLAGS[m.b]||'')+'</span>'+(m.clock?' <span class="lmin">'+m.clock+"'</span>":'')+(lg?' · <span class="okmark">✓ '+tt('on track','현재 충족 중')+'</span>':''); }
     else { const ms=kickoffMs(m.date,m.time); sortk=isFinite(ms)?ms:7e15;
       if(isFinite(ms)){ if(now<ms) stat=tt('⏰ not played yet · ','⏰ 경기 전 · ')+fmtKick(ms); else if(now<ms+150*60000){ isLive=true; stat='<span class="live">🔴 LIVE</span> · '+tt('awaiting score','스코어 대기'); } else stat=tt('awaiting result','결과 대기'); }
       else stat=tt('not played yet','경기 전')+(m.time?' · '+m.time:''); }
-    cards.push({g, sortk, cls:'btile'+(isLive?' livecard':''), p:prob(g), body:'<div class="cond">'+cond+'</div><div class="bstat">'+stat+'</div>'});
+    cards.push({g, sortk, cls:'btile'+(isLive?' livecard':'')+(lg?' livegood':''), p:prob(g), body:'<div class="cond'+(lg?' condgood':'')+'">'+cond+'</div><div class="bstat">'+stat+'</div>'});
   });
 
   host.innerHTML='';
